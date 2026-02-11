@@ -1,6 +1,19 @@
 <?php
-    include 'conn.php';
-    if($_COOKIE['noEmpleado'] == '' || $_COOKIE['noEmpleado'] == null){
+    require_once 'conn.php';
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    $noEmpleado = '';
+    if (isset($_COOKIE['noEmpleado']) && $_COOKIE['noEmpleado'] !== '') {
+        $noEmpleado = $_COOKIE['noEmpleado'];
+    } elseif (isset($_COOKIE['noEmpleadoL']) && $_COOKIE['noEmpleadoL'] !== '') {
+        $noEmpleado = $_COOKIE['noEmpleadoL'];
+    } elseif (isset($_SESSION['noEmpleado']) && $_SESSION['noEmpleado'] !== '') {
+        $noEmpleado = $_SESSION['noEmpleado'];
+    }
+
+    if ($noEmpleado === '') {
         echo '<script>window.location.assign("../loginMaster")</script>';
     }
 ?>
@@ -34,73 +47,21 @@
 <!-- Divider -->
 <hr class="sidebar-divider my-2 alert-light">
 <!-- Nav Item - Pages Collapse Menu -->
-<?php
-//81 203 8  usuarios norte
-//USUARIOS QUE PUEDEN REGISTRAR ACTIVIDADES
-$usuariosRegistran = array(212, 14, 42, 161, 403, 183, 521, 276, 26, 147, 189, 177, 45, 26, 525, 435, 489, 523, 298, 81, 203, 8, 278, 206, 123, 516);
-
-if (in_array($_COOKIE['noEmpleado'], $usuariosRegistran)) {
-?>
-    <li class="nav-item">
-    <a class="nav-link" href="index">
-        <i class="fas fa-fw fa-check text-gray-400 mb-0"></i>
-        <span>Registrar actividad</span>
-    </a>
-</li>
-<?php
-}
-?>
-
 
 <li class="nav-item">
-    <a class="nav-link" href="seguimiento_actividades">
-        <i class="fas fa-fw fa-list text-gray-400"></i>
-        <span>Seguimiento actividades</span>
+    <a class="nav-link" href="registro_actividades_SGC">
+        <i class="fas fa-fw fa-pen text-gray-400"></i>
+        <span>Registro SGC</span>
     </a>
 </li>
 
 <li class="nav-item">
-    <a class="nav-link" href="pendientes">
-        <i class="fas fa-fw fa-hourglass-half text-warning"></i>
-        <span>Actividades por Vencer</span>
-    </a>
-</li>
-<hr class="sidebar-divider my-0 alert-light">
-<li class="nav-item">
-    <a class="nav-link" href="sol_logistica">
-        <i class="fas fa-fw fa-car text-gray-400"></i>
-        <span>Solicitudes Logistica</span>
-    </a>
-</li>
-<hr class="sidebar-divider my-0 alert-light">
-<li class="nav-item">
-    <a class="nav-link" href="verActividadesPlaneadas">
-        <i class="fas fa-fw fa-calendar text-gray-400"></i>
-        <span>Actividades planeadas</span>
+    <a class="nav-link" href="detalles_actividades_SGC">
+        <i class="fas fa-fw fa-table text-gray-400"></i>
+        <span>Detalle Actividades</span>
     </a>
 </li>
 
-<li class="nav-item">
-    <a class="nav-link" href="verActividades">
-        <i class="fas fa-fw fa-calendar text-gray-400"></i>
-        <span>Actividades planeadas SCOT</span>
-    </a>
-</li>
-<hr class="sidebar-divider my-0 alert-light">
-<li class="nav-item">
-    <a class="nav-link" href="grafica_planeacion">
-        <i class="fas fa-fw fa-chart-bar text-gray-400"></i>
-        <span>Resumen por Área</span>
-    </a>
-</li>
-
-<hr class="sidebar-divider my-0 alert-light">
-<li class="nav-item">
-    <a class="nav-link" href="Manual Planeacion.pdf" target="_blank">
-        <i class="fas fa-fw fa-book text-gray-400"></i>
-        <span>Manual de usuario</span>
-    </a>
-</li>
 
 <li class = "nav-item">
     <a class = "nav-link" href = "#" data-toggle = "modal" data-target = "#logoutModalN">

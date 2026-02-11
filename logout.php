@@ -19,19 +19,19 @@
 	
 		$(document).ready(function() {
 			//document.cookie = "antiguedad='.$antiguedad.';expires=" + new Date(Date.now() + 9600000).toUTCString() + ";SameSite=Lax;";
-			document.cookie = "antiguedad =00; expires=Thu, 01 Jan 1970 00:00:00 UTC";
-			document.cookie = "diasD =00; expires=Thu, 01 Jan 1970 00:00:00 UTC";
-			document.cookie = "noEmpleado =00; expires=Thu, 01 Jan 1970 00:00:00 UTC";
-			document.cookie = "nombredelusuario =00; expires=Thu, 01 Jan 1970 00:00:00 UTC";
-			document.cookie = "rol =00; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+			document.cookie = "antiguedad=00; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+			document.cookie = "diasD=00; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+			document.cookie = "noEmpleado=00; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+			document.cookie = "nombredelusuario=00; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+			document.cookie = "rol=00; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
 
 			let cookieSesion = getCookie("SesionLogin");
 					//alert("Cerrando sesi贸n..." + cookieSesion);
 			if (cookieSesion === "LoginMaster") {
-				document.cookie = "SesionLogin=00; expires=Thu, 01 Jan 1970 00:00:00 UTC";
-				window.location.assign("../loginMaster/inicio");
+				document.cookie = "SesionLogin=00; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+				window.location.assign(window.location.origin + "/loginMaster/inicio.php");
 			} else {
-				window.location.assign("https://www.messbook.com.mx/ControlVehicular/");
+				window.location.assign("https://www.messbook.com.mx");
 			}
 		});
 
