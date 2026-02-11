@@ -24,6 +24,31 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `categorias_actividades`
+--
+
+CREATE TABLE `categorias_actividades` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `categorias_actividades`
+--
+
+INSERT INTO `categorias_actividades` (`id`, `nombre`) VALUES
+(1, 'Objetivos de calidad'),
+(2, 'Equipamiento'),
+(3, 'Seleccion verificacion validacion metodos'),
+(4, 'Evaluacion incertidumbre medicion'),
+(5, 'Aseguramiento validez resultados'),
+(6, 'Control datos gestion informacion'),
+(7, 'Auditorias internas Opcion A'),
+(8, 'Otras');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `actividades`
 --
 
@@ -33,15 +58,16 @@ CREATE TABLE `actividades` (
   `actividad` varchar(500) NOT NULL,
   `id_recurrencia` int(11) NOT NULL,
   `periodo_registro` varchar(20) NOT NULL,
-  `observaciones` varchar(999) NOT NULL
+  `observaciones` varchar(999) NOT NULL,
+  `id_categoria` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `actividades`
 --
 
-INSERT INTO `actividades` (`id`, `num_actividad`, `actividad`, `id_recurrencia`, `periodo_registro`, `observaciones`) VALUES
-(1, '6.2.1', 'Matriz de competencia técnica', 1, '2025-11', 'Prueba BD');
+INSERT INTO `actividades` (`id`, `num_actividad`, `actividad`, `id_recurrencia`, `periodo_registro`, `observaciones`, `id_categoria`) VALUES
+(1, '6.2.1', 'Matriz de competencia técnica', 1, '2025-11', 'Prueba BD', 1);
 
 -- --------------------------------------------------------
 
@@ -369,6 +395,13 @@ INSERT INTO `usuarios` (`id`, `usuario`, `password`, `noEmpleado`, `nombre`, `co
 -- Indices de la tabla `actividades`
 --
 ALTER TABLE `actividades`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `id_categoria` (`id_categoria`);
+
+--
+-- Indices de la tabla `categorias_actividades`
+--
+ALTER TABLE `categorias_actividades`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -400,6 +433,12 @@ ALTER TABLE `actividades`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT de la tabla `categorias_actividades`
+--
+ALTER TABLE `categorias_actividades`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
 -- AUTO_INCREMENT de la tabla `involucrados`
 --
 ALTER TABLE `involucrados`
@@ -416,6 +455,16 @@ ALTER TABLE `recurrencia`
 --
 ALTER TABLE `usuarios`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=245;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `actividades`
+--
+ALTER TABLE `actividades`
+  ADD CONSTRAINT `actividades_ibfk_1` FOREIGN KEY (`id_categoria`) REFERENCES `categorias_actividades` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
