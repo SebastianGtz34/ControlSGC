@@ -1,3 +1,5 @@
+let usuariosCache = [];
+
 // Inicializa selectores y eventos si existen en la pagina.
 $(document).ready(function() {
     // Si estamos en la pagina de detalle, cargar datos
@@ -33,6 +35,79 @@ $(document).ready(function() {
         // Envia alta o actualizacion de actividad.
         $('#formActividad').on('submit', function(e) {
             e.preventDefault();
+            
+            // Validar firmas
+            let idArea = $('#areaPlan').val();
+            let puestoPresenta = $('#puestoPresenta').val();
+            let usuarioPresenta = $('#usuarioPresenta').val();
+            let puestoAprueba = $('#puestoAprueba').val();
+            let usuarioAprueba = $('#usuarioAprueba').val();
+            
+            if (!idArea || !puestoPresenta || !usuarioPresenta || !puestoAprueba || !usuarioAprueba) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Firmas incompletas',
+                    text: 'Debes seleccionar el area, puesto y usuario que elabora y quien aprueba.'
+                });
+                return;
+            }
+            
+            // Validar que haya al menos una actividad completa por sección
+            let secciones = ['6-2', '6-3', '6-4', '7-2', '7-6', '7-7', '7-11', '8-8', 'iv'];
+            let seccionesNombres = {
+                '6-2': '6.2 Personal',
+                '6-3': '6.3 Infraestructura',
+                '6-4': '6.4 Ambiente de Trabajo',
+                '7-2': '7.2 Determinación de los Requisitos',
+                '7-6': '7.6 Control de Cambios',
+                '7-7': '7.7 Control de Salidas no Conformes',
+                '7-11': '7.11 Control de Dispositivos de Seguimiento y Medición',
+                '8-8': '8.8 Revisión por la Dirección',
+                'iv': 'IV. Comunicación con el Cliente'
+            };
+            
+            for (let i = 0; i < secciones.length; i++) {
+                let seccion = secciones[i];
+                let seccionId = seccion === 'iv' ? 'iv' : seccion;
+                let filas = $('#plan-rows-' + seccionId + ' .plan-row');
+                
+                if (filas.length === 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Sección incompleta',
+                        text: 'La sección "' + seccionesNombres[seccion] + '" no tiene filas.'
+                    });
+                    return;
+                }
+                
+                let tieneActividad = false;
+                
+                filas.each(function() {
+                    // Buscar los elementos dentro de esta fila
+                    let textareaActividad = $(this).find('textarea[name*="actividad[' + seccionId + ']"]');
+                    let selectResponsable = $(this).find('select[name*="responsable[' + seccionId + ']"]');
+                    let checkboxesMeses = $(this).find('input[name*="meses[' + seccionId + ']"]:checked');
+                    
+                    let actividad = textareaActividad.val() ? textareaActividad.val().trim() : '';
+                    let responsable = selectResponsable.val();
+                    let meses = checkboxesMeses.length;
+                    
+                    if (actividad && responsable && meses > 0) {
+                        tieneActividad = true;
+                        return false; // break
+                    }
+                });
+                
+                if (!tieneActividad) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Sección incompleta',
+                        text: 'La sección "' + seccionesNombres[seccion] + '" debe tener al menos una actividad completa (actividad, responsable y al menos un mes seleccionado).'
+                    });
+                    return;
+                }
+            }
+            
             let accion = $('#actividad_id').val() ? 'actualizar' : 'crear';
             let datos = $(this).serialize() + '&accion=' + accion;
 
@@ -64,6 +139,23 @@ $(document).ready(function() {
                             cargarActividades();
                         }
                         $('#formActividad')[0].reset();
+                        resetPlanRows();
+
+                        if ($('#areaPlan').length) {
+                            $('#areaPlan').val('').trigger('change');
+                        }
+                        if ($('#puestoPresenta').length) {
+                            $('#puestoPresenta').val('').trigger('change');
+                        }
+                        if ($('#usuarioPresenta').length) {
+                            $('#usuarioPresenta').val('').trigger('change');
+                        }
+                        if ($('#puestoAprueba').length) {
+                            $('#puestoAprueba').val('').trigger('change');
+                        }
+                        if ($('#usuarioAprueba').length) {
+                            $('#usuarioAprueba').val('').trigger('change');
+                        }
                     });
                 },
                 error: function() {
@@ -104,10 +196,119 @@ $(document).ready(function() {
 
 // Convierte texto a mayusculas y sin acentos.
 function convertirTexto(e) {
-    e.value = e.value
-        .toUpperCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+    // Función desactivada: permite escribir en minúsculas y con acentos
+    return;
+}
+
+// Construye el HTML de una fila del plan de actividades para una sección dada.
+function buildPlanRow(index, seccion) {
+    let meses = [1,2,3,4,5,6,7,8,9,10,11,12];
+    let mesCeldas = meses.map(function(m) {
+        return '<td class="text-center">' +
+            '<input type="checkbox" name="meses[' + seccion + '][' + index + '][]" value="' + m + '">' +
+            '</td>';
+    }).join('');
+
+    // Convertir guión a punto para el número de actividad (7-11 -> 7.11)
+    let seccionConPunto = seccion.replace('-', '.');
+    let numeroActividad = seccionConPunto + '.' + (index + 1);
+
+    return '<tr class="plan-row" data-row="' + index + '" data-seccion="' + seccion + '">' +
+        '<td class="text-center">' +
+            '<input type="text" class="form-control form-control-sm" name="num_actividad[' + seccion + '][' + index + ']" value="' + numeroActividad + '" readonly>' +
+        '</td>' +
+        '<td>' +
+            '<textarea class="form-control form-control-sm" name="actividad[' + seccion + '][' + index + ']" rows="3" required onkeyup="convertirTexto(this)"></textarea>' +
+        '</td>' +
+        mesCeldas +
+        '<td>' +
+            '<select class="form-select form-select-sm responsable-select" name="responsable[' + seccion + '][' + index + ']" required>' +
+                '<option value="">Selecciona...</option>' +
+            '</select>' +
+        '</td>' +
+        '<td>' +
+            '<select class="form-select form-select-sm participantes-select" name="participantes[' + seccion + '][' + index + '][]" multiple></select>' +
+        '</td>' +
+        '<td>' +
+            '<textarea class="form-control form-control-sm" name="observaciones[' + seccion + '][' + index + ']" rows="3" onkeyup="convertirTexto(this)"></textarea>' +
+        '</td>' +
+    '</tr>';
+}
+
+function agregarFilaPlan(seccion) {
+    let $tbody = $('#plan-rows-' + seccion.replace('.', '-'));
+    let $rows = $tbody.find('.plan-row');
+    let nextIndex = $rows.length;
+    $tbody.append(buildPlanRow(nextIndex, seccion));
+    let $newRow = $tbody.find('.plan-row').last();
+    poblarUsuariosEnFila($newRow);
+    actualizarNumerosActividades(seccion);
+}
+
+function quitarFilaPlan(seccion) {
+    let $tbody = $('#plan-rows-' + seccion.replace('.', '-'));
+    let $rows = $tbody.find('.plan-row');
+    if ($rows.length <= 1) {
+        return;
+    }
+    $rows.last().remove();
+    actualizarNumerosActividades(seccion);
+}
+
+function actualizarNumerosActividades(seccion) {
+    let $tbody = $('#plan-rows-' + seccion.replace('.', '-'));
+    let $rows = $tbody.find('.plan-row');
+    
+    // Convertir guión a punto para el número de actividad
+    let seccionConPunto = seccion.replace('-', '.');
+    
+    $rows.each(function(index) {
+        let $input = $(this).find('input[name^="num_actividad["]');
+        let numeroActividad = seccionConPunto + '.' + (index + 1);
+        $input.val(numeroActividad);
+    });
+}
+
+function resetPlanRows() {
+    let secciones = ['6-2', '6-3', '6-4', '7-2', '7-6', '7-7', '7-11', '8-8', 'IV'];
+    secciones.forEach(function(seccion) {
+        let $tbody = $('#plan-rows-' + seccion);
+        if ($tbody.length === 0) return; // Skip if tbody doesn't exist
+        $tbody.find('.plan-row').remove();
+        let seccionOriginal = seccion.replace('-', '.');
+        $tbody.append(buildPlanRow(0, seccionOriginal));
+        poblarUsuariosEnFila($tbody.find('.plan-row').first());
+        actualizarNumerosActividades(seccionOriginal);
+    });
+}
+
+function poblarUsuariosEnFila($row) {
+    let $responsable = $row.find('.responsable-select');
+    let $participantes = $row.find('.participantes-select');
+
+    $responsable.empty().append('<option value="">Selecciona...</option>');
+    $participantes.empty();
+
+    usuariosCache.forEach(function(usr) {
+        $responsable.append('<option value="' + usr.id_usuario + '">' + usr.nombre + '</option>');
+        $participantes.append('<option value="' + usr.id_usuario + '">' + usr.nombre + '</option>');
+    });
+
+    if ($responsable.hasClass('select2-hidden-accessible')) {
+        $responsable.select2('destroy');
+    }
+    if ($participantes.hasClass('select2-hidden-accessible')) {
+        $participantes.select2('destroy');
+    }
+
+    $responsable.select2({
+        placeholder: 'Selecciona responsable',
+        width: '100%'
+    });
+    $participantes.select2({
+        placeholder: 'Selecciona participantes',
+        width: '100%'
+    });
 }
 
 // Obtiene el valor de un parametro en la URL.
@@ -180,15 +381,34 @@ function cargarActividades() {
                 data: rows,
                 columns: [
                     { 
-                        data: 'categoria',
-                        render: function(data, type, row) {
-                            return '<span class="badge bg-secondary"><i class="fas fa-tag me-1"></i>' + (data || 'Sin categoría') + '</span>';
+                        data: 'plan_id',
+                        render: function(data) {
+                            return '<span class="text-dark fw-bold">' + (data || '-') + '</span>';
                         }
                     },
                     { 
-                        data: 'recurrencia',
+                        data: 'anio',
                         render: function(data) {
-                            return '<span class="badge bg-primary">' + data + '</span>';
+                            return '<span class="badge bg-success">' + (data || '-') + '</span>';
+                        }
+                    },
+                    { 
+                        data: 'seccion',
+                        render: function(data) {
+                            return '<span class="badge bg-info text-dark">' + (data || '-') + '</span>';
+                        }
+                    },
+                    { 
+                        data: null,
+                        render: function(data, type, row) {
+                            return '<strong class="text-primary">' + (row.num_actividad || '') + '</strong> ' + 
+                                   '<span class="text-dark">' + (row.actividad || '-') + '</span>';
+                        }
+                    },
+                    { 
+                        data: 'meses_texto',
+                        render: function(data) {
+                            return '<span class="badge bg-secondary">' + (data || '-') + '</span>';
                         }
                     },
                     { 
@@ -207,13 +427,7 @@ function cargarActividades() {
                         data: 'periodo_registro',
                         render: function(data) {
                             if (!data) return '-';
-                            return '<i class="far fa-calendar-alt me-1 text-dark"></i><span class="text-dark fw-bold">' + data + '</span>';
-                        }
-                    },
-                    { 
-                        data: 'observaciones',
-                        render: function(data) {
-                            return '<span class="text-muted small">' + (data || '-') + '</span>';
+                            return '<i class="far fa-calendar-alt me-1 text-dark"></i><span class="text-dark small">' + data + '</span>';
                         }
                     },
                     { 
@@ -249,21 +463,23 @@ function editarActividad(id) {
                 return;
             }
             let a = resp.data.actividad;
+            resetPlanRows();
+            let $row = $('.plan-row').first();
             $('#actividad_id').val(a.id);
-            $('#num_actividad').val(a.num_actividad);
-            $('#actividad').val(a.actividad);
+            $row.find('input[name^="num_actividad"]').val(a.num_actividad);
+            $row.find('textarea[name^="actividad"]').val(a.actividad);
             $('#id_categoria').val(a.id_categoria);
             $('#id_recurrencia').val(a.id_recurrencia);
             $('#periodo_registro').val(a.periodo_registro);
-            $('#observaciones').val(a.observaciones);
+            $row.find('textarea[name^="observaciones"]').val(a.observaciones);
 
-            $('input[name="meses[]"]').prop('checked', false);
+            $row.find('input[type="checkbox"][name^="meses"]').prop('checked', false);
             (resp.data.meses || []).forEach(function(m) {
-                $('#mes_' + m).prop('checked', true);
+                $row.find('input[type="checkbox"][value="' + m + '"]').prop('checked', true);
             });
 
-            $('#responsable').val(resp.data.responsable).trigger('change');
-            $('#participantes').val(resp.data.participantes).trigger('change');
+            $row.find('.responsable-select').val(resp.data.responsable).trigger('change');
+            $row.find('.participantes-select').val(resp.data.participantes).trigger('change');
         }
     });
 }
@@ -385,46 +601,59 @@ function cargarDatosFormulario() {
             }
 
             let data = resp.data;
+            usuariosCache = data.usuarios || [];
+            let puestos = data.puestos || [];
+            let areas = data.areas || [];
 
-            // Cargar categorias
-            $('#id_categoria').empty().append('<option value="">Selecciona...</option>');
-            data.categorias.forEach(function(cat) {
-                $('#id_categoria').append('<option value="' + cat.id + '">' + cat.nombre + '</option>');
-            });
+            if ($('#puestoPresenta').length) {
+                $('#areaPlan').empty().append('<option value="">Selecciona un area...</option>');
+                $('#puestoPresenta').empty().append('<option value="">Selecciona un puesto...</option>');
+                $('#puestoAprueba').empty().append('<option value="">Selecciona un puesto...</option>');
+                $('#usuarioPresenta').empty().append('<option value="">Selecciona un usuario...</option>');
+                $('#usuarioAprueba').empty().append('<option value="">Selecciona un usuario...</option>');
 
-            // Cargar recurrencias
-            $('#id_recurrencia').empty().append('<option value="">Selecciona...</option>');
-            data.recurrencias.forEach(function(rec) {
-                $('#id_recurrencia').append('<option value="' + rec.id + '">' + rec.tipo_tiempo + '</option>');
-            });
+                areas.forEach(function(area) {
+                    let option = $('<option></option>')
+                        .attr('value', area.id_area)
+                        .text(area.nombre_area);
+                    $('#areaPlan').append(option);
+                });
 
-            // Cargar responsable
-            $('#responsable').empty().append('<option value="">Selecciona...</option>');
-            data.usuarios.forEach(function(usr) {
-                $('#responsable').append('<option value="' + usr.noEmpleado + '">' + usr.nombre + '</option>');
-            });
+                puestos.forEach(function(puesto) {
+                    let option = $('<option></option>')
+                        .attr('value', puesto.id_puesto)
+                        .text(puesto.nombre_puesto);
+                    $('#puestoPresenta').append(option.clone());
+                    $('#puestoAprueba').append(option);
+                });
 
-            // Cargar participantes
-            $('#participantes').empty();
-            data.usuarios.forEach(function(usr) {
-                $('#participantes').append('<option value="' + usr.noEmpleado + '">' + usr.nombre + '</option>');
-            });
+                usuariosCache.forEach(function(usuario) {
+                    let option = $('<option></option>')
+                        .attr('value', usuario.id_usuario)
+                        .text(usuario.nombre);
+                    $('#usuarioPresenta').append(option.clone());
+                    $('#usuarioAprueba').append(option);
+                });
 
-            // Re-inicializar Select2 si ya estaba inicializado
-            if ($('#responsable').hasClass('select2-hidden-accessible')) {
-                $('#responsable').select2('destroy');
+                if (!$('#areaPlan').hasClass('select2-hidden-accessible')) {
+                    $('#areaPlan').select2({ width: '100%' });
+                }
+                if (!$('#puestoPresenta').hasClass('select2-hidden-accessible')) {
+                    $('#puestoPresenta').select2({ width: '100%' });
+                }
+                if (!$('#puestoAprueba').hasClass('select2-hidden-accessible')) {
+                    $('#puestoAprueba').select2({ width: '100%' });
+                }
+                if (!$('#usuarioPresenta').hasClass('select2-hidden-accessible')) {
+                    $('#usuarioPresenta').select2({ width: '100%' });
+                }
+                if (!$('#usuarioAprueba').hasClass('select2-hidden-accessible')) {
+                    $('#usuarioAprueba').select2({ width: '100%' });
+                }
             }
-            if ($('#participantes').hasClass('select2-hidden-accessible')) {
-                $('#participantes').select2('destroy');
-            }
-            
-            $('#responsable').select2({
-                placeholder: 'Selecciona responsable',
-                width: '100%'
-            });
-            $('#participantes').select2({
-                placeholder: 'Selecciona participantes',
-                width: '100%'
+
+            $('.plan-row').each(function() {
+                poblarUsuariosEnFila($(this));
             });
         },
         error: function() {

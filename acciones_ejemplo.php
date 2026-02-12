@@ -159,7 +159,7 @@ include_once 'conn.php';
                         (
                             SELECT GROUP_CONCAT(DISTINCT us.nombre SEPARATOR ', ')
                             FROM entrada_log_ingenieros eli
-                            INNER JOIN usuarios us ON (us.id_usuario = eli.id_ing)
+                            INNER JOIN mess_rrhh.usuarios us ON (us.id_usuario = eli.id_ing)
                             WHERE eli.id_registro = ent.id_registro
                             AND eli.estatus = 'ASIGNADO'
                         ) AS nombres_ingenieros,
@@ -184,7 +184,7 @@ include_once 'conn.php';
                         (
                             SELECT GROUP_CONCAT(DISTINCT us.nombre SEPARATOR ', ')
                             FROM entrada_log_ingenieros eli
-                            INNER JOIN usuarios us ON (us.id = eli.id_ing OR us.id_usuario = eli.id_ing)
+                            INNER JOIN mess_rrhh.usuarios us ON (us.id = eli.id_ing OR us.id_usuario = eli.id_ing)
                             WHERE eli.id_registro = ent.id_registro
                             AND eli.estatus = 'ASIGNADO'
                         ) AS nombres_ingenieros,
@@ -220,7 +220,7 @@ include_once 'conn.php';
 
     // CARGAR INGENIEROS
     if ($accion == 'obtenerIngenieros') {
-        $sql = "SELECT nombre, id_usuario FROM `usuarios` WHERE estatus = 1 ORDER BY nombre ASC";
+        $sql = "SELECT nombre, id_usuario FROM mess_rrhh.usuarios WHERE estatus = 1 ORDER BY nombre ASC";
         $result = $conn->query($sql);
         $ingenieros = [];
         
@@ -238,7 +238,7 @@ include_once 'conn.php';
         $ingenierosAsignados = [];
         if ($id_registro_param > 0) {
             $sql = "SELECT DISTINCT eli.id_ing AS id_ing,
-                        (SELECT COALESCE(u.nombre, '') FROM usuarios u WHERE u.id = eli.id_ing OR u.id_usuario = eli.id_ing LIMIT 1) AS nombre
+                        (SELECT COALESCE(u.nombre, '') FROM mess_rrhh.usuarios u WHERE u.id = eli.id_ing OR u.id_usuario = eli.id_ing LIMIT 1) AS nombre
                     FROM entrada_log_ingenieros eli
                     WHERE eli.id_registro = ? AND eli.estatus = 'ASIGNADO'";
             $stmt = $conn->prepare($sql);
@@ -395,7 +395,7 @@ include_once 'conn.php';
                 (
                     SELECT GROUP_CONCAT(DISTINCT us.nombre SEPARATOR ', ')
                     FROM entrada_log_ingenieros eli
-                    INNER JOIN usuarios us ON (us.id_usuario = eli.id_ing)
+                    INNER JOIN mess_rrhh.usuarios us ON (us.id_usuario = eli.id_ing)
                     WHERE eli.id_registro = ent.id_registro
                 ) AS ingeniero_nombre
                 FROM entrada_registros ent
@@ -433,7 +433,7 @@ include_once 'conn.php';
                                         es.fecha_seguimiento, es.fecha_actualizacion, es.ruta_foto, es.estatus,
                                         us.nombre AS nombre_usuario
                                 FROM entrada_seguimiento es
-                                INNER JOIN usuarios us ON us.id_usuario = es.id_usuario_nota
+                                INNER JOIN mess_rrhh.usuarios us ON us.id_usuario = es.id_usuario_nota
                                 WHERE es.id_registro = ?
                                 ORDER BY es.fecha_seguimiento DESC";
             $stmtSeg = $conn->prepare($sqlSeguimientos);

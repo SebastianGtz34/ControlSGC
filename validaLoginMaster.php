@@ -15,7 +15,7 @@ if (empty($id_usuario) || empty($noEmpleado)) {
     echo json_encode(['success' => false, 'message' => 'Datos incompletos.']);
     exit;
 } else {
-    $Qempresas  =  "SELECT  *, TIMESTAMPDIFF(YEAR,fechaIngreso,CURDATE()) AS antiguedad, rol FROM usuarios WHERE usuario  = '".$usuario."' AND estatus = 1";
+    $Qempresas  =  "SELECT  *, TIMESTAMPDIFF(YEAR,fechaIngreso,CURDATE()) AS antiguedad, rol FROM mess_rrhh.usuarios WHERE usuario  = '".$usuario."' AND estatus = 1";
     $res2 =  mysqli_query( $conn, $Qempresas ) or die (mysqli_error($conn));
     $nr = mysqli_num_rows($res2);
 

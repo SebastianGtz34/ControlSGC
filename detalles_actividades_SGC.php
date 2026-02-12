@@ -33,12 +33,14 @@
                                         <table class="table table-hover align-middle" id="tablaActividades" width="100%" cellspacing="0">
                                             <thead class="bg-light border-bottom">
                                                 <tr>
-                                                    <th class="text-secondary fw-semibold small">Categoria</th>
-                                                    <th class="text-secondary fw-semibold small">Recurrencia</th>
+                                                    <th class="text-secondary fw-semibold small">ID Plan</th>
+                                                    <th class="text-secondary fw-semibold small">Año</th>
+                                                    <th class="text-secondary fw-semibold small">Sección</th>
+                                                    <th class="text-secondary fw-semibold small">Actividad</th>
+                                                    <th class="text-secondary fw-semibold small">Meses</th>
                                                     <th class="text-secondary fw-semibold small">Responsable</th>
                                                     <th class="text-secondary fw-semibold small">Participantes</th>
                                                     <th class="text-secondary fw-semibold small">Fecha registro</th>
-                                                    <th class="text-secondary fw-semibold small">Observaciones</th>
                                                     <th class="text-secondary fw-semibold small text-center">Acciones</th>
                                                 </tr>
                                             </thead>
