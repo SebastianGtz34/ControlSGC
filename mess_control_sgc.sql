@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
--- Servidor: 127.0.0.1
--- Tiempo de generación: 22-11-2025 a las 00:29:33
--- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.12
+-- Servidor: 127.0.0.1:3306
+-- Tiempo de generación: 12-02-2026 a las 16:05:41
+-- Versión del servidor: 8.4.7
+-- Versión de PHP: 8.3.28
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -24,50 +24,144 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `categorias_actividades`
---
-
-CREATE TABLE `categorias_actividades` (
-  `id` int(11) NOT NULL,
-  `nombre` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `categorias_actividades`
---
-
-INSERT INTO `categorias_actividades` (`id`, `nombre`) VALUES
-(1, 'Objetivos de calidad'),
-(2, 'Equipamiento'),
-(3, 'Seleccion verificacion validacion metodos'),
-(4, 'Evaluacion incertidumbre medicion'),
-(5, 'Aseguramiento validez resultados'),
-(6, 'Control datos gestion informacion'),
-(7, 'Auditorias internas Opcion A'),
-(8, 'Otras');
-
--- --------------------------------------------------------
-
---
 -- Estructura de tabla para la tabla `actividades`
 --
 
-CREATE TABLE `actividades` (
-  `id` int(11) NOT NULL,
-  `num_actividad` varchar(6) NOT NULL,
-  `actividad` varchar(500) NOT NULL,
-  `id_recurrencia` int(11) NOT NULL,
-  `periodo_registro` varchar(20) NOT NULL,
-  `observaciones` varchar(999) NOT NULL,
-  `id_categoria` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+DROP TABLE IF EXISTS `actividades`;
+CREATE TABLE IF NOT EXISTS `actividades` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_plan_anual` int NOT NULL,
+  `seccion` varchar(10) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '6.2',
+  `num_actividad` varchar(6) COLLATE utf8mb4_general_ci NOT NULL,
+  `actividad` varchar(500) COLLATE utf8mb4_general_ci NOT NULL,
+  `id_recurrencia` int NOT NULL,
+  `periodo_registro` date NOT NULL,
+  `observaciones` varchar(999) COLLATE utf8mb4_general_ci NOT NULL,
+  `id_categoria` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_plan_anual` (`id_plan_anual`),
+  KEY `idx_seccion` (`seccion`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `actividades`
 --
 
-INSERT INTO `actividades` (`id`, `num_actividad`, `actividad`, `id_recurrencia`, `periodo_registro`, `observaciones`, `id_categoria`) VALUES
-(1, '6.2.1', 'Matriz de competencia técnica', 1, '2025-11', 'Prueba BD', 1);
+INSERT INTO `actividades` (`id`, `id_plan_anual`, `seccion`, `num_actividad`, `actividad`, `id_recurrencia`, `periodo_registro`, `observaciones`, `id_categoria`) VALUES
+(1, 1, '6.2', '6.2.1', 'Matriz de competencia técnica', 1, '0000-00-00', 'Prueba BD', 0),
+(2, 1, '6.2', '1', 'PRUEBA', 1, '2026-02-11', 'PRUEBA REGISTRO', 0),
+(3, 1, '6.2', '1.2', 'PRUEBA 2', 3, '2026-02-11', 'PRUEBA 2', 0),
+(4, 1, '6.3', '1.3', 'IVYUVBKJBH', 4, '2026-02-11', 'ECYJVTYV', 0),
+(6, 1, '6.4', '1', 'NCGC', 2, '2026-02-11', 'NHF,YJVH,JHV', 0),
+(7, 1, '7.2', '1', 'TDFMJHFMJH', 3, '2026-02-11', 'MTFCMCFUMGJ', 0),
+(8, 1, '7.6', '1', 'MCMGM', 4, '2026-02-11', 'THFCUKFV,JH', 0),
+(9, 1, '7.7', '1', 'TFVUKYFVUYKFJ', 2, '2026-02-11', 'TDCKUTDFCUF', 2),
+(10, 1, '8.8', '1', 'JFVJVKJV', 3, '2026-02-11', 'MHCKVVJH', 4);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `actividad_meses`
+--
+
+DROP TABLE IF EXISTS `actividad_meses`;
+CREATE TABLE IF NOT EXISTS `actividad_meses` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_actividad` int NOT NULL,
+  `mes` tinyint NOT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `actividad_meses`
+--
+
+INSERT INTO `actividad_meses` (`id`, `id_actividad`, `mes`, `activo`) VALUES
+(2, 3, 1, 1),
+(3, 3, 2, 1),
+(8, 4, 3, 1),
+(9, 4, 4, 1),
+(10, 4, 5, 1),
+(11, 4, 10, 1),
+(14, 6, 1, 1),
+(15, 6, 2, 1),
+(16, 7, 1, 1),
+(17, 7, 2, 1),
+(20, 2, 2, 1),
+(21, 8, 1, 1),
+(22, 8, 2, 1),
+(29, 9, 1, 1),
+(30, 9, 2, 1),
+(31, 9, 3, 1),
+(32, 9, 4, 1),
+(33, 9, 5, 1),
+(34, 9, 6, 1),
+(35, 9, 7, 1),
+(36, 9, 8, 1),
+(37, 9, 9, 1),
+(38, 9, 10, 1),
+(39, 9, 11, 1),
+(40, 9, 12, 1),
+(44, 10, 1, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `planes_anuales`
+--
+
+DROP TABLE IF EXISTS `planes_anuales`;
+CREATE TABLE IF NOT EXISTS `planes_anuales` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `anio` int NOT NULL,
+  `titulo_objetivos` text COLLATE utf8mb4_general_ci,
+  `cargo_presenta` varchar(100) COLLATE utf8mb4_general_ci,
+  `nombre_presenta` varchar(150) COLLATE utf8mb4_general_ci,
+  `cargo_aprueba` varchar(100) COLLATE utf8mb4_general_ci,
+  `nombre_aprueba` varchar(150) COLLATE utf8mb4_general_ci,
+  `id_registra` varchar(20) COLLATE utf8mb4_general_ci,
+  `estatus` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'PRESENTADO',
+  `fecha_creacion` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `fecha_actualizacion` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_anio` (`anio`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `planes_anuales`
+--
+
+INSERT INTO `planes_anuales` (`id`, `anio`, `titulo_objetivos`, `cargo_presenta`, `nombre_presenta`, `cargo_aprueba`, `nombre_aprueba`, `fecha_creacion`) VALUES
+(1, 2026, NULL, NULL, NULL, NULL, NULL, '2026-02-12 00:00:00');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `categorias_actividades`
+--
+
+DROP TABLE IF EXISTS `categorias_actividades`;
+CREATE TABLE IF NOT EXISTS `categorias_actividades` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_categoria` int NOT NULL,
+  `nombre` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `categorias_actividades`
+--
+
+INSERT INTO `categorias_actividades` (`id`, `id_categoria`, `nombre`) VALUES
+(1, 0, 'Objetivos de calidad'),
+(2, 0, 'Equipamiento'),
+(3, 0, 'Seleccion, verificacion y validacion de metodos'),
+(4, 0, 'Evaluacion de la incertidumbre de la medicion'),
+(5, 0, 'Aseguramiento de la validez de los resultados'),
+(6, 0, 'Control de los datos y gestion de la informacion'),
+(7, 0, 'Auditorias internas Opcion A'),
+(8, 0, 'Otras');
 
 -- --------------------------------------------------------
 
@@ -75,12 +169,14 @@ INSERT INTO `actividades` (`id`, `num_actividad`, `actividad`, `id_recurrencia`,
 -- Estructura de tabla para la tabla `involucrados`
 --
 
-CREATE TABLE `involucrados` (
-  `id` int(11) NOT NULL,
-  `id_actividad` int(3) NOT NULL,
-  `tipo_involucrado` varchar(15) NOT NULL,
-  `id_usuario` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+DROP TABLE IF EXISTS `involucrados`;
+CREATE TABLE IF NOT EXISTS `involucrados` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_actividad` int NOT NULL,
+  `tipo_involucrado` varchar(15) COLLATE utf8mb4_general_ci NOT NULL,
+  `id_usuario` int NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `involucrados`
@@ -88,7 +184,19 @@ CREATE TABLE `involucrados` (
 
 INSERT INTO `involucrados` (`id`, `id_actividad`, `tipo_involucrado`, `id_usuario`) VALUES
 (1, 1, 'Responsable', 183),
-(2, 1, 'Participante', 523);
+(2, 1, 'Participante', 523),
+(5, 3, 'Responsable', 523),
+(7, 4, 'Responsable', 523),
+(9, 6, 'Responsable', 523),
+(10, 7, 'Responsable', 523),
+(12, 2, 'Responsable', 523),
+(13, 8, 'Responsable', 523),
+(14, 8, 'Participante', 276),
+(17, 9, 'Responsable', 183),
+(18, 9, 'Participante', 523),
+(22, 10, 'Responsable', 183),
+(23, 10, 'Participante', 276),
+(24, 10, 'Participante', 523);
 
 -- --------------------------------------------------------
 
@@ -96,10 +204,12 @@ INSERT INTO `involucrados` (`id`, `id_actividad`, `tipo_involucrado`, `id_usuari
 -- Estructura de tabla para la tabla `recurrencia`
 --
 
-CREATE TABLE `recurrencia` (
-  `id` int(11) NOT NULL,
-  `tipo_tiempo` varchar(100) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+DROP TABLE IF EXISTS `recurrencia`;
+CREATE TABLE IF NOT EXISTS `recurrencia` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `tipo_tiempo` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `recurrencia`
@@ -118,19 +228,20 @@ INSERT INTO `recurrencia` (`id`, `tipo_tiempo`) VALUES
 -- Estructura de tabla para la tabla `usuarios`
 --
 
-CREATE TABLE `usuarios` (
-  `id` int(11) NOT NULL,
+DROP TABLE IF EXISTS `usuarios`;
+CREATE TABLE IF NOT EXISTS `usuarios` (
+  `id` int NOT NULL AUTO_INCREMENT,
   `usuario` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
   `password` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
   `noEmpleado` varchar(11) CHARACTER SET latin1 COLLATE latin1_spanish_ci NOT NULL,
-  `nombre` varchar(150) CHARACTER SET utf8 COLLATE utf8_spanish_ci NOT NULL,
-  `correo` varchar(150) CHARACTER SET utf8 COLLATE utf8_spanish_ci NOT NULL,
-  `puesto` int(11) NOT NULL,
-  `region` int(11) NOT NULL,
-  `departamento` int(11) NOT NULL,
+  `nombre` varchar(150) CHARACTER SET utf8mb3 COLLATE utf8mb3_spanish_ci NOT NULL,
+  `correo` varchar(150) CHARACTER SET utf8mb3 COLLATE utf8mb3_spanish_ci NOT NULL,
+  `puesto` int NOT NULL,
+  `region` int NOT NULL,
+  `departamento` int NOT NULL,
   `fechaIngreso` date NOT NULL,
-  `estatus` int(11) NOT NULL,
-  `rol` int(11) NOT NULL,
+  `estatus` int NOT NULL,
+  `rol` int NOT NULL,
   `jefe` varchar(50) CHARACTER SET latin1 COLLATE latin1_spanish_ci NOT NULL,
   `diasdisponibles` varchar(50) CHARACTER SET latin1 COLLATE latin1_spanish_ci NOT NULL,
   `tipoContrato` varchar(50) CHARACTER SET latin1 COLLATE latin1_spanish_ci NOT NULL,
@@ -139,8 +250,9 @@ CREATE TABLE `usuarios` (
   `rfc` varchar(20) CHARACTER SET latin1 COLLATE latin1_spanish_ci NOT NULL,
   `curp` varchar(25) CHARACTER SET latin1 COLLATE latin1_spanish_ci NOT NULL,
   `tipoSangre` varchar(15) CHARACTER SET latin1 COLLATE latin1_spanish_ci NOT NULL,
-  `id_usuario` int(11) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+  `id_usuario` int NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=245 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 
 --
 -- Volcado de datos para la tabla `usuarios`
@@ -386,85 +498,17 @@ INSERT INTO `usuarios` (`id`, `usuario`, `password`, `noEmpleado`, `nombre`, `co
 (241, 'eduardo.garcia@mess.com.mx', 'eduardo.garcia', '550', 'Juan Eduardo Garcia Arreola', 'eduardo.garcia@mess.com.mx', 8, 4, 2, '2025-10-01', 1, 1, '71', '0', 'TEMPORAL', 'M', 'S/R', 'S/R', 'S/R', '', 524),
 (242, 'alan.gonzalez@mess.com.mx', 'alan.gonzalez', '398', 'Alan Gonzalez Nuñez', 'alan.gonzalez@mess.com.mx', 38, 4, 29, '2025-09-01', 1, 1, '123', '16', 'PLANTA', 'M', '', '', '', '', 520),
 (243, 'esmeralda.chavira@mess.com.mx', 'esmeralda.chavira', '549', 'Nayeli Esmeralda Chavira Galván', 'esmeralda.chavira@mess.com.mx', 8, 10, 40, '2025-09-24', 1, 1, '288', '12', 'PLANTA', 'F', '0', '0', '0', '', 522);
+-- --------------------------------------------------------
 
 --
--- Índices para tablas volcadas
+-- Índices adicionales para optimizar consultas
 --
 
---
--- Indices de la tabla `actividades`
---
-ALTER TABLE `actividades`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `id_categoria` (`id_categoria`);
+ALTER TABLE `actividades` ADD INDEX `idx_periodo_registro` (`periodo_registro`);
+ALTER TABLE `actividad_meses` ADD INDEX `idx_mes` (`mes`);
+ALTER TABLE `involucrados` ADD INDEX `idx_usuario` (`id_usuario`);
+ALTER TABLE `involucrados` ADD INDEX `idx_tipo` (`tipo_involucrado`);
 
---
--- Indices de la tabla `categorias_actividades`
---
-ALTER TABLE `categorias_actividades`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indices de la tabla `involucrados`
---
-ALTER TABLE `involucrados`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indices de la tabla `recurrencia`
---
-ALTER TABLE `recurrencia`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indices de la tabla `usuarios`
---
-ALTER TABLE `usuarios`
-  ADD PRIMARY KEY (`id`);
-
---
--- AUTO_INCREMENT de las tablas volcadas
---
-
---
--- AUTO_INCREMENT de la tabla `actividades`
---
-ALTER TABLE `actividades`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT de la tabla `categorias_actividades`
---
-ALTER TABLE `categorias_actividades`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
-
---
--- AUTO_INCREMENT de la tabla `involucrados`
---
-ALTER TABLE `involucrados`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT de la tabla `recurrencia`
---
-ALTER TABLE `recurrencia`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT de la tabla `usuarios`
---
-ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=245;
-
---
--- Restricciones para tablas volcadas
---
-
---
--- Filtros para la tabla `actividades`
---
-ALTER TABLE `actividades`
-  ADD CONSTRAINT `actividades_ibfk_1` FOREIGN KEY (`id_categoria`) REFERENCES `categorias_actividades` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
