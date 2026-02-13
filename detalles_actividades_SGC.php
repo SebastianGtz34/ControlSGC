@@ -31,17 +31,17 @@
                                 <div class="card-body">
                                     <div class="table-responsive">
                                         <table class="table table-hover align-middle" id="tablaActividades" width="100%" cellspacing="0">
-                                            <thead class="bg-light border-bottom">
+                                            <thead class="bg-secondary border-bottom">
                                                 <tr>
-                                                    <th class="text-secondary fw-semibold small">ID Plan</th>
-                                                    <th class="text-secondary fw-semibold small">Año</th>
-                                                    <th class="text-secondary fw-semibold small">Sección</th>
-                                                    <th class="text-secondary fw-semibold small">Actividad</th>
-                                                    <th class="text-secondary fw-semibold small">Meses</th>
-                                                    <th class="text-secondary fw-semibold small">Responsable</th>
-                                                    <th class="text-secondary fw-semibold small">Participantes</th>
-                                                    <th class="text-secondary fw-semibold small">Fecha registro</th>
-                                                    <th class="text-secondary fw-semibold small text-center">Acciones</th>
+                                                    <th class="text-white fw-semibold small">Objetivos</th>
+                                                    <th class="text-white fw-semibold small">Presenta</th>
+                                                    <th class="text-white fw-semibold small">Aprueba</th>
+                                                    <th class="text-white fw-semibold small">Registra</th>
+                                                    <th class="text-white fw-semibold small">Área</th>
+                                                    <th class="text-white fw-semibold small">Estatus</th>
+                                                    <th class="text-white fw-semibold small">Fecha registro</th>
+                                                    <th class="text-white fw-semibold small">Fecha actualización</th>
+                                                    <th class="text-white fw-semibold small text-center">Acciones</th>
                                                 </tr>
                                             </thead>
                                             <tbody></tbody>
@@ -74,6 +74,6 @@
     <script src="https://cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js" defer="defer"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/actividades_sgc.js"></script>
+    <script src="js/actividades_sgc.js?v=20260213"></script>
 </body>
 </html>

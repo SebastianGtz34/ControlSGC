@@ -34,7 +34,7 @@ $mesesArr = isset($_POST['meses']) ? $_POST['meses'] : [];
 // ACCIÓN: datos_formulario
 // ====================================================
 if ($accion === 'datos_formulario') {
-    $resultUsuarios = $conn->query("SELECT id_usuario, nombre FROM mess_rrhh.usuarios WHERE estatus = 1 ORDER BY nombre");
+    $resultUsuarios = $conn->query("SELECT id_usuario, nombre, puesto, departamento FROM mess_rrhh.usuarios WHERE estatus = 1 ORDER BY nombre");
     if ($resultUsuarios) {
         while ($row = $resultUsuarios->fetch_assoc()) {
             $usuarios[] = $row;
@@ -48,12 +48,12 @@ if ($accion === 'datos_formulario') {
         }
     }
 
-    $resultAreas = $conn->query("SELECT id AS id_area, AREA FROM mess_rrhh.areas ORDER BY AREA");
+    $resultAreas = $conn->query("SELECT id AS id_area, departamento AS nombre_area FROM mess_rrhh.departamento ORDER BY departamento");
     if ($resultAreas) {
         while ($row = $resultAreas->fetch_assoc()) {
             $areas[] = [
                 'id_area' => $row['id_area'],
-                'nombre_area' => $row['AREA']
+                'nombre_area' => $row['nombre_area']
             ];
         }
     }
@@ -73,83 +73,48 @@ if ($accion === 'datos_formulario') {
 // ====================================================
 // ACCIÓN: listado
 // ====================================================
-if ($accion === 'listar') {
-        $sql = "SELECT a.id, a.id_plan_anual, p.id AS plan_id, p.anio, a.seccion, a.num_actividad, a.actividad, a.periodo_registro, a.observaciones
-            FROM actividades a
-            INNER JOIN planes_anuales p ON p.id = a.id_plan_anual
-            ORDER BY p.anio DESC, a.seccion, a.num_actividad";
+if ($accion === 'listar_planes') {
+    $sql = "SELECT pa.*, 
+            CONCAT_WS(' - ', up.nombre, pp.puesto) AS presenta_text,
+            CONCAT_WS(' - ', ua.nombre, pa2.puesto) AS aprueba_text,
+            ur.nombre AS registra_text,
+            dpto.departamento AS area_text
+        FROM planes_anuales pa
+        LEFT JOIN mess_rrhh.usuarios up ON up.id_usuario = pa.id_presenta
+        LEFT JOIN mess_rrhh.usuarios ua ON ua.id_usuario = pa.id_aprueba
+        LEFT JOIN mess_rrhh.puesto pp ON pp.id = up.puesto
+        LEFT JOIN mess_rrhh.puesto pa2 ON pa2.id = ua.puesto
+        LEFT JOIN mess_rrhh.usuarios ur ON ur.noEmpleado = pa.id_registra
+        LEFT JOIN mess_rrhh.departamento dpto ON dpto.id = pa.id_area
+        ORDER BY pa.fecha_creacion DESC, pa.id DESC";
     $result = $conn->query($sql);
+
+    if ($result === false) {
+        $sqlFallback = "SELECT pa.*, 
+                CONCAT_WS(' - ', up.nombre, pp.puesto) AS presenta_text,
+                CONCAT_WS(' - ', ua.nombre, pa2.puesto) AS aprueba_text,
+                ur.nombre AS registra_text
+            FROM planes_anuales pa
+            LEFT JOIN mess_rrhh.usuarios up ON up.id_usuario = pa.id_presenta
+            LEFT JOIN mess_rrhh.usuarios ua ON ua.id_usuario = pa.id_aprueba
+            LEFT JOIN mess_rrhh.puesto pp ON pp.id = up.puesto
+            LEFT JOIN mess_rrhh.puesto pa2 ON pa2.id = ua.puesto
+            LEFT JOIN mess_rrhh.usuarios ur ON ur.noEmpleado = pa.id_registra
+            ORDER BY pa.fecha_creacion DESC, pa.id DESC";
+        $result = $conn->query($sqlFallback);
+    }
 
     $rows = [];
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $idActividad = (int)$row['id'];
-
-            $meses = [];
-            $stmtMeses = $conn->prepare("SELECT mes FROM actividad_meses WHERE id_actividad = ? AND activo = 1");
-            $stmtMeses->bind_param('i', $idActividad);
-            $stmtMeses->execute();
-            $resMeses = $stmtMeses->get_result();
-            
-            $nombresMeses = [
-                'Enero' => 1, 'Febrero' => 2, 'Marzo' => 3, 'Abril' => 4,
-                'Mayo' => 5, 'Junio' => 6, 'Julio' => 7, 'Agosto' => 8,
-                'Septiembre' => 9, 'Octubre' => 10, 'Noviembre' => 11, 'Diciembre' => 12
-            ];
-            
-            while ($m = $resMeses->fetch_assoc()) {
-                $nombreMes = trim($m['mes']);
-                if (isset($nombresMeses[$nombreMes])) {
-                    $meses[] = $nombresMeses[$nombreMes];
-                }
-            }
-            $stmtMeses->close();
-            
-            sort($meses);
-
-            $responsable = '';
-            $stmtResp = $conn->prepare("SELECT u.nombre
-                FROM involucrados i
-                INNER JOIN mess_rrhh.usuarios u ON u.id_usuario = i.id_usuario
-                WHERE i.id_actividad = ? AND i.tipo_involucrado = 'Responsable'
-                LIMIT 1");
-            $stmtResp->bind_param('i', $idActividad);
-            $stmtResp->execute();
-            $resResp = $stmtResp->get_result();
-            if ($resResp && $resResp->num_rows > 0) {
-                $responsable = $resResp->fetch_assoc()['nombre'];
-            }
-            $stmtResp->close();
-
-            $participantes = [];
-            $stmtPart = $conn->prepare("SELECT u.nombre
-                FROM involucrados i
-                INNER JOIN mess_rrhh.usuarios u ON u.id_usuario = i.id_usuario
-                WHERE i.id_actividad = ? AND i.tipo_involucrado = 'Participante'
-                ORDER BY u.nombre");
-            $stmtPart->bind_param('i', $idActividad);
-            $stmtPart->execute();
-            $resPart = $stmtPart->get_result();
-            while ($p = $resPart->fetch_assoc()) {
-                $participantes[] = $p['nombre'];
-            }
-            $stmtPart->close();
-
-            $rows[] = [
-                'id' => $idActividad,
-                'plan_id' => $row['plan_id'],
-                'anio' => $row['anio'],
-                'seccion' => $row['seccion'],
-                'num_actividad' => $row['num_actividad'],
-                'actividad' => $row['actividad'],
-                'periodo_registro' => $row['periodo_registro'],
-                'observaciones' => $row['observaciones'],
-                'meses' => $meses,
-                'meses_texto' => implode(', ', $meses),
-                'responsable' => $responsable,
-                'participantes' => $participantes
-            ];
+            $rows[] = $row;
         }
+    }
+
+    if ($result === false) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => $conn->error]);
+        exit;
     }
 
     header('Content-Type: application/json');
@@ -226,6 +191,93 @@ if ($accion === 'detalle') {
 }
 
 // ====================================================
+// ACCIÓN: detalle_plan
+// ====================================================
+if ($accion === 'detalle_plan') {
+    $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+    if ($id <= 0) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false]);
+        exit;
+    }
+
+    // Obtener datos del plan
+    $stmt = $conn->prepare("SELECT * FROM planes_anuales WHERE id = ?");
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $plan = $res->fetch_assoc();
+    $stmt->close();
+
+    if (!$plan) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false]);
+        exit;
+    }
+
+    // Obtener todas las actividades del plan agrupadas por sección
+    $stmtActividades = $conn->prepare("SELECT * FROM actividades WHERE id_plan_anual = ? ORDER BY seccion, id");
+    $stmtActividades->bind_param('i', $id);
+    $stmtActividades->execute();
+    $resActividades = $stmtActividades->get_result();
+    $actividades = [];
+    while ($act = $resActividades->fetch_assoc()) {
+        $idActividad = $act['id'];
+        
+        // Obtener meses de cada actividad
+        $stmtMeses = $conn->prepare("SELECT mes FROM actividad_meses WHERE id_actividad = ? AND activo = 1 ORDER BY mes");
+        $stmtMeses->bind_param('i', $idActividad);
+        $stmtMeses->execute();
+        $resMeses = $stmtMeses->get_result();
+        $meses = [];
+        $nombresMeses = ['Enero' => 1, 'Febrero' => 2, 'Marzo' => 3, 'Abril' => 4, 'Mayo' => 5, 'Junio' => 6, 
+                        'Julio' => 7, 'Agosto' => 8, 'Septiembre' => 9, 'Octubre' => 10, 'Noviembre' => 11, 'Diciembre' => 12];
+        while ($m = $resMeses->fetch_assoc()) {
+            $meses[] = isset($nombresMeses[$m['mes']]) ? $nombresMeses[$m['mes']] : $m['mes'];
+        }
+        $stmtMeses->close();
+        
+        // Obtener responsable
+        $stmtResp = $conn->prepare("SELECT id_usuario FROM involucrados WHERE id_actividad = ? AND tipo_involucrado = 'Responsable' LIMIT 1");
+        $stmtResp->bind_param('i', $idActividad);
+        $stmtResp->execute();
+        $resResp = $stmtResp->get_result();
+        $responsable = '';
+        if ($resResp && $resResp->num_rows > 0) {
+            $responsable = $resResp->fetch_assoc()['id_usuario'];
+        }
+        $stmtResp->close();
+        
+        // Obtener participantes
+        $stmtPart = $conn->prepare("SELECT id_usuario FROM involucrados WHERE id_actividad = ? AND tipo_involucrado = 'Participante'");
+        $stmtPart->bind_param('i', $idActividad);
+        $stmtPart->execute();
+        $resPart = $stmtPart->get_result();
+        $participantes = [];
+        while ($p = $resPart->fetch_assoc()) {
+            $participantes[] = $p['id_usuario'];
+        }
+        $stmtPart->close();
+        
+        $act['meses'] = $meses;
+        $act['responsable'] = $responsable;
+        $act['participantes'] = $participantes;
+        $actividades[] = $act;
+    }
+    $stmtActividades->close();
+
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'data' => [
+            'plan' => $plan,
+            'actividades' => $actividades
+        ]
+    ]);
+    exit;
+}
+
+// ====================================================
 // ACCIÓN: crear / actualizar
 // ====================================================
 if ($accion === 'crear' || $accion === 'actualizar') {
@@ -237,59 +289,98 @@ if ($accion === 'crear' || $accion === 'actualizar') {
     
     $nombrePresenta = $usuarioPresenta;
     $nombreAprueba = $usuarioAprueba;
-
-    // INSERTAR un nuevo registro en planes_anuales con los datos del formulario
-    $stmtInsertPlan = $conn->prepare("INSERT INTO planes_anuales (anio, titulo_objetivos, cargo_presenta, nombre_presenta, cargo_aprueba, nombre_aprueba, id_registra, id_area)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmtInsertPlan->bind_param('isiiiisi', $anioActual, $objetivosCalidad, $puestoPresenta, $nombrePresenta, $puestoAprueba, $nombreAprueba, $noEmpleado, $idArea);
-    $okInsert = $stmtInsertPlan->execute();
-    $idPlanAnual = $stmtInsertPlan->insert_id;
-    $stmtInsertPlan->close();
-
-    if (!$okInsert) {
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => false,
-            'error' => $conn->error
-        ]);
-        exit;
-    }
     
-    if ($idPlanAnual <= 0) {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false]);
-        exit;
+    // Verificar si estamos editando un plan existente
+    $planEditarId = isset($_POST['plan_editar_id']) ? (int)$_POST['plan_editar_id'] : 0;
+    
+    if ($planEditarId > 0) {
+        // ACTUALIZAR plan existente
+        $stmtUpdatePlan = $conn->prepare("UPDATE planes_anuales 
+            SET titulo_objetivos = ?, id_presenta = ?, id_aprueba = ?, id_area = ?, fecha_actualizacion = NOW()
+            WHERE id = ?");
+        $stmtUpdatePlan->bind_param('siiii', $objetivosCalidad, $usuarioPresenta, $usuarioAprueba, $idArea, $planEditarId);
+        $okUpdate = $stmtUpdatePlan->execute();
+        $stmtUpdatePlan->close();
+        
+        if (!$okUpdate) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'error' => $conn->error
+            ]);
+            exit;
+        }
+        
+        $idPlanAnual = $planEditarId;
+        
+        // Obtener actividades existentes del plan para actualizar
+        $actividadesExistentes = [];
+        $stmtGetAct = $conn->prepare("SELECT id, seccion FROM actividades WHERE id_plan_anual = ? ORDER BY seccion, id");
+        $stmtGetAct->bind_param('i', $idPlanAnual);
+        $stmtGetAct->execute();
+        $resGetAct = $stmtGetAct->get_result();
+        while ($rowAct = $resGetAct->fetch_assoc()) {
+            $actividadesExistentes[$rowAct['seccion']][] = $rowAct['id'];
+        }
+        $stmtGetAct->close();
+        
+    } else {
+        // INSERTAR un nuevo registro en planes_anuales con los datos del formulario
+        $stmtInsertPlan = $conn->prepare("INSERT INTO planes_anuales (anio, titulo_objetivos, id_presenta, id_aprueba, id_registra, id_area)
+            VALUES (?, ?, ?, ?, ?, ?)");
+        $stmtInsertPlan->bind_param('isiiii', $anioActual, $objetivosCalidad, $usuarioPresenta, $usuarioAprueba, $noEmpleado, $idArea);
+        $okInsert = $stmtInsertPlan->execute();
+        $idPlanAnual = $stmtInsertPlan->insert_id;
+        $stmtInsertPlan->close();
+
+        if (!$okInsert) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'error' => $conn->error
+            ]);
+            exit;
+        }
+        
+        if ($idPlanAnual <= 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false]);
+            exit;
+        }
+        
+        $actividadesExistentes = [];
     }
 
     $conn->begin_transaction();
 
-    if ($accion === 'crear') {
+    if ($accion === 'crear' || $planEditarId > 0) {
         $totalInserted = 0;
         $secciones = array_keys($numActividadArr);
         $seccionesNombres = [
-            '6-2' => '6.2 Personal',
-            '6-3' => '6.3 Infraestructura',
-            '6-4' => '6.4 Ambiente de Trabajo',
-            '7-2' => '7.2 Determinación de los Requisitos',
-            '7-6' => '7.6 Control de Cambios',
-            '7-7' => '7.7 Control de Salidas no Conformes',
-            '7-11' => '7.11 Control de Dispositivos de Seguimiento y Medición',
-            '8-8' => '8.8 Revisión por la Dirección',
-            'iv' => 'IV. Comunicación con el Cliente'
+            '6.2' => '6.2 Personal',
+            '6.3' => '6.3 Infraestructura',
+            '6.4' => '6.4 Ambiente de Trabajo',
+            '7.2' => '7.2 Determinación de los Requisitos',
+            '7.6' => '7.6 Control de Cambios',
+            '7.7' => '7.7 Control de Salidas no Conformes',
+            '7.11' => '7.11 Control de Dispositivos de Seguimiento y Medición',
+            '8.8' => '8.8 Revisión por la Dirección',
+            'iv' => 'IV. Otras'
         ];
 
-        foreach ($secciones as $seccion) {
-            // Convertir guion a punto para la numeracion y resolver nombre de seccion
-            $seccionConPunto = str_replace('-', '.', $seccion);
-            $seccionKey = strtolower($seccion);
-            $seccionNombre = $seccionesNombres[$seccionKey] ?? $seccionesNombres[$seccion] ?? $seccionConPunto;
+        foreach ($secciones as $seccionKeyRaw) {
+            // PHP convierte los puntos en guiones bajos dentro de los nombres
+            $seccionKey = strtolower($seccionKeyRaw);
+            $seccionNormalizada = str_replace('_', '.', $seccionKey);
+            $seccionConPunto = str_replace('-', '.', $seccionNormalizada);
+            $seccionNombre = $seccionesNombres[$seccionNormalizada] ?? $seccionesNombres[$seccionConPunto] ?? $seccionConPunto;
             
-            $numArrSeccion = $numActividadArr[$seccion] ?? [];
-            $actArrSeccion = $actividadArr[$seccion] ?? [];
-            $obsArrSeccion = $observacionesArr[$seccion] ?? [];
-            $respArrSeccion = $responsableArr[$seccion] ?? [];
-            $partArrSeccion = $participantesArr[$seccion] ?? [];
-            $mesArrSeccion = $mesesArr[$seccion] ?? [];
+            $numArrSeccion = $numActividadArr[$seccionKeyRaw] ?? [];
+            $actArrSeccion = $actividadArr[$seccionKeyRaw] ?? [];
+            $obsArrSeccion = $observacionesArr[$seccionKeyRaw] ?? [];
+            $respArrSeccion = $responsableArr[$seccionKeyRaw] ?? [];
+            $partArrSeccion = $participantesArr[$seccionKeyRaw] ?? [];
+            $mesArrSeccion = $mesesArr[$seccionKeyRaw] ?? [];
 
             if (!is_array($numArrSeccion)) $numArrSeccion = [$numArrSeccion];
             if (!is_array($actArrSeccion)) $actArrSeccion = [$actArrSeccion];
@@ -308,7 +399,7 @@ if ($accion === 'crear' || $accion === 'actualizar') {
                 $participantes = is_array($partArrSeccion[$i] ?? null) ? $partArrSeccion[$i] : [];
                 $meses = is_array($mesArrSeccion[$i] ?? null) ? $mesArrSeccion[$i] : [];
 
-                $filaVacia = ($numActividad === '' && $actividad === '' && $observaciones === '' && $responsable === ''
+                $filaVacia = ($actividad === '' && $responsable === ''
                     && empty($participantes) && empty($meses));
 
                 if ($filaVacia) {
@@ -322,20 +413,53 @@ if ($accion === 'crear' || $accion === 'actualizar') {
                     exit;
                 }
 
-                $stmt = $conn->prepare("INSERT INTO actividades (id_plan_anual, seccion, num_actividad, actividad, periodo_registro, observaciones)
-                    VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param('isssss', $idPlanAnual, $seccionNombre, $numActividad, $actividad, $periodoRegistro, $observaciones);
-                $ok = $stmt->execute();
-                if ($ok) {
-                    $idActividad = $stmt->insert_id;
-                }
-                $stmt->close();
+                // Verificar si estamos actualizando actividades existentes
+                $idActividad = null;
+                if ($planEditarId > 0 && isset($actividadesExistentes[$seccionNombre][$i])) {
+                    // ACTUALIZAR actividad existente
+                    $idActividad = $actividadesExistentes[$seccionNombre][$i];
+                    
+                    $stmt = $conn->prepare("UPDATE actividades 
+                        SET num_actividad = ?, actividad = ?, periodo_registro = ?, observaciones = ?
+                        WHERE id = ?");
+                    $stmt->bind_param('ssssi', $numActividad, $actividad, $periodoRegistro, $observaciones, $idActividad);
+                    $ok = $stmt->execute();
+                    $stmt->close();
+                    
+                    if (!$ok) {
+                        $conn->rollback();
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false]);
+                        exit;
+                    }
+                    
+                    // Eliminar involucrados y meses antiguos para actualizar
+                    $stmtDelInv = $conn->prepare("DELETE FROM involucrados WHERE id_actividad = ?");
+                    $stmtDelInv->bind_param('i', $idActividad);
+                    $stmtDelInv->execute();
+                    $stmtDelInv->close();
+                    
+                    $stmtDelMes = $conn->prepare("DELETE FROM actividad_meses WHERE id_actividad = ?");
+                    $stmtDelMes->bind_param('i', $idActividad);
+                    $stmtDelMes->execute();
+                    $stmtDelMes->close();
+                } else {
+                    // INSERTAR nueva actividad
+                    $stmt = $conn->prepare("INSERT INTO actividades (id_plan_anual, seccion, num_actividad, actividad, periodo_registro, observaciones)
+                        VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt->bind_param('isssss', $idPlanAnual, $seccionNombre, $numActividad, $actividad, $periodoRegistro, $observaciones);
+                    $ok = $stmt->execute();
+                    if ($ok) {
+                        $idActividad = $stmt->insert_id;
+                    }
+                    $stmt->close();
 
-                if (!$ok) {
-                    $conn->rollback();
-                    header('Content-Type: application/json');
-                    echo json_encode(['success' => false]);
-                    exit;
+                    if (!$ok) {
+                        $conn->rollback();
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false]);
+                        exit;
+                    }
                 }
 
                 $stmtResp = $conn->prepare("INSERT INTO involucrados (id_actividad, tipo_involucrado, id_usuario)
@@ -397,15 +521,17 @@ if ($accion === 'crear' || $accion === 'actualizar') {
             exit;
         }
 
-        $primeraSeccion = array_key_first($numActividadArr);
+        $primeraSeccionKey = array_key_first($numActividadArr);
+        $primeraSeccion = strtolower($primeraSeccionKey);
+        $primeraSeccion = str_replace('_', '.', $primeraSeccion);
         $primeraSeccionConPunto = str_replace('-', '.', $primeraSeccion);
 
-        $numActividad = trim($numActividadArr[$primeraSeccion][0] ?? '');
-        $actividad = trim($actividadArr[$primeraSeccion][0] ?? '');
-        $observaciones = trim($observacionesArr[$primeraSeccion][0] ?? '');
-        $responsable = trim($responsableArr[$primeraSeccion][0] ?? '');
-        $participantes = is_array($participantesArr[$primeraSeccion][0] ?? null) ? $participantesArr[$primeraSeccion][0] : [];
-        $meses = is_array($mesesArr[$primeraSeccion][0] ?? null) ? $mesesArr[$primeraSeccion][0] : [];
+        $numActividad = trim($numActividadArr[$primeraSeccionKey][0] ?? '');
+        $actividad = trim($actividadArr[$primeraSeccionKey][0] ?? '');
+        $observaciones = trim($observacionesArr[$primeraSeccionKey][0] ?? '');
+        $responsable = trim($responsableArr[$primeraSeccionKey][0] ?? '');
+        $participantes = is_array($participantesArr[$primeraSeccionKey][0] ?? null) ? $participantesArr[$primeraSeccionKey][0] : [];
+        $meses = is_array($mesesArr[$primeraSeccionKey][0] ?? null) ? $mesesArr[$primeraSeccionKey][0] : [];
 
         if ($numActividad === '' || $actividad === '' || $responsable === '') {
             $conn->rollback();

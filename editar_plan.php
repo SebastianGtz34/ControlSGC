@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Control SGC</title>
+    <title>Control SGC - Editar Plan</title>
 
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link href="css/sb-admin-2.min.css" rel="stylesheet">
@@ -31,7 +31,7 @@
                                         <input type="hidden" name="plan_editar_id" id="plan_editar_id">
 
                                         <div class="text-center py-2 mb-3">
-                                            <div class="fw-bold text-uppercase" id="tituloFormulario">Objetivos de Trabajo y Plan Anual de Actividades del Año: 2026</div>
+                                            <div class="fw-bold text-uppercase" id="tituloFormulario">Editar Plan Anual de Actividades del Año: 2026</div>
                                         </div>
 
                                         <div class="fw-bold text-uppercase mb-2">I. Objetivos de calidad</div>
@@ -774,7 +774,7 @@
                         </div>
 
                         <div class="d-flex justify-content-center gap-2 mt-3">
-                            <button type="submit" class="btn btn-outline-success">Guardar</button>
+                            <button type="submit" class="btn btn-outline-success">Actualizar Plan</button>
                         </div>
                     </form>
                 </div>

@@ -110,8 +110,6 @@ exit;
                 width: '100%'
             });
 
-            cargarActividades();
-
             // Envia alta/actualizacion de actividad.
             $('#formActividad').on('submit', function(e) {
             e.preventDefault();
@@ -138,7 +136,6 @@ exit;
                         title: 'Listo',
                         text: 'Registro guardado.'
                     });
-                    cargarActividades();
                     $('#formActividad')[0].reset();
                 },
                 error: function() {
@@ -151,17 +148,6 @@ exit;
             });
         });
 
-            // Carga datos de una actividad para editar.
-            $('#tablaActividades tbody').on('click', '.btn-editar', function() {
-            let id = $(this).data('id');
-            editarActividad(id);
-        });
-
-            // Solicita eliminacion de una actividad.
-            $('#tablaActividades tbody').on('click', '.btn-eliminar', function() {
-            let id = $(this).data('id');
-            eliminarActividad(id);
-        });
         });
         
         // Convierte texto a mayusculas y sin acentos.
@@ -177,78 +163,6 @@ exit;
             let value = "; " + document.cookie;
             let parts = value.split("; " + name + "=");
             if (parts.length === 2) return parts.pop().split(";").shift();
-        }
-
-        // Carga actividades y llena la tabla.
-        function cargarActividades() {
-            // Consulta actividades en backend.
-            $.ajax({
-                url: 'acciones_actividades.php',
-                method: 'POST',
-                dataType: 'json',
-                data: { accion: 'listar' },
-                success: function(resp) {
-                    if (!resp.success) {
-                        return;
-                    }
-
-                    let rows = resp.data || [];
-                    if ($.fn.DataTable.isDataTable('#tablaActividades')) {
-                        let tabla = $('#tablaActividades').DataTable();
-                        tabla.clear();
-                        tabla.rows.add(rows).draw();
-                        return;
-                    }
-
-                    $('#tablaActividades').DataTable({
-                        paging: true,
-                        pageLength: 10,
-                        lengthMenu: [10, 25, 50, 100],
-                        searching: true,
-                        ordering: true,
-                        responsive: true,
-                        autoWidth: true,
-                        language: {
-                            processing: "Procesando...",
-                            search: "Buscar:",
-                            lengthMenu: "Mostrar _MENU_ registros",
-                            info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                            infoEmpty: "Mostrando 0 a 0 de 0 registros",
-                            infoFiltered: "(filtrado de _MAX_ registros en total)",
-                            loadingRecords: "Cargando...",
-                            zeroRecords: "No se encontraron resultados",
-                            emptyTable: "No hay datos disponibles en la tabla",
-                            paginate: {
-                                first: "Primero",
-                                previous: "Anterior",
-                                next: "Siguiente",
-                                last: "Ultimo"
-                            },
-                            aria: {
-                                sortAscending: ": activar para ordenar la columna de manera ascendente",
-                                sortDescending: ": activar para ordenar la columna de manera descendente"
-                            }
-                        },
-                        data: rows,
-                        columns: [
-                            { data: 'num_actividad' },
-                            { data: 'actividad' },
-                            { data: 'meses_texto' },
-                            { data: 'recurrencia' },
-                            { data: 'responsable' },
-                            { data: 'participantes', render: function(data) { return (data || []).join(', '); } },
-                            { data: 'periodo_registro' },
-                            { data: 'observaciones' },
-                            { data: null, orderable: false, render: function(data) {
-                                return '<button class="btn btn-sm btn-outline-warning btn-editar" data-id="' + data.id + '" title="Editar">' +
-                                       '<i class="fas fa-pen"></i></button> ' +
-                                       '<button class="btn btn-sm btn-outline-danger btn-eliminar" data-id="' + data.id + '" title="Eliminar">' +
-                                       '<i class="fas fa-trash"></i></button>';
-                            }}
-                        ]
-                    });
-                }
-            });
         }
 
         // Obtiene detalle de actividad y llena el formulario.
@@ -308,7 +222,6 @@ exit;
                             return;
                         }
                         Swal.fire({ icon: 'success', title: 'Eliminado', text: 'Registro eliminado.' });
-                        cargarActividades();
                     }
                 });
             });
