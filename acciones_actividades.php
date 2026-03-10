@@ -774,5 +774,35 @@ if ($accion === 'detalle_completo') {
     exit;
 }
 
+// ====================================================
+// ACCIÓN: obtener_comentarios
+// ====================================================
+if ($accion === 'obtener_comentarios') {
+    $idPlan = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+    if ($idPlan <= 0) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'ID de plan inválido.']);
+        exit;
+    }
+
+    $sql = "SELECT num_actividad, actividad, observaciones, observaciones_aprobado, observaciones_no_aprobado
+            FROM actividades
+            WHERE id_plan_anual = ?
+            ORDER BY seccion, id";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('i', $idPlan);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $comentarios = [];
+    while ($row = $res->fetch_assoc()) {
+        $comentarios[] = $row;
+    }
+    $stmt->close();
+
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true, 'data' => $comentarios]);
+    exit;
+}
+
 header('Content-Type: application/json');
 echo json_encode(['success' => false]);
