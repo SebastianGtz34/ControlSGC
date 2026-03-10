@@ -34,7 +34,7 @@ $mesesArr = isset($_POST['meses']) ? $_POST['meses'] : [];
 // ACCIÓN: datos_formulario
 // ====================================================
 if ($accion === 'datos_formulario') {
-    $resultUsuarios = $conn->query("SELECT id_usuario, nombre, puesto, departamento FROM mess_rrhh.usuarios WHERE estatus = 1 ORDER BY nombre");
+    $resultUsuarios = $conn->query("SELECT id_usuario, nombre, puesto, departamento AS area FROM mess_rrhh.usuarios WHERE estatus = 1 ORDER BY nombre");
     if ($resultUsuarios) {
         while ($row = $resultUsuarios->fetch_assoc()) {
             $usuarios[] = $row;
@@ -48,7 +48,7 @@ if ($accion === 'datos_formulario') {
         }
     }
 
-    $resultAreas = $conn->query("SELECT id AS id_area, departamento AS nombre_area FROM mess_rrhh.departamento ORDER BY departamento");
+    $resultAreas = $conn->query("SELECT id AS id_area, AREA AS nombre_area FROM mess_rrhh.areas ORDER BY AREA");
     if ($resultAreas) {
         while ($row = $resultAreas->fetch_assoc()) {
             $areas[] = [
@@ -78,14 +78,28 @@ if ($accion === 'listar_planes') {
             CONCAT_WS(' - ', up.nombre, pp.puesto) AS presenta_text,
             CONCAT_WS(' - ', ua.nombre, pa2.puesto) AS aprueba_text,
             ur.nombre AS registra_text,
-            dpto.departamento AS area_text
+            ar.AREA AS area_text,
+            COALESCE(ac.total_actividades, 0) AS total_actividades,
+            COALESCE(ac.aprobadas, 0) AS actividades_aprobadas,
+            COALESCE(ac.no_aprobadas, 0) AS actividades_no_aprobadas,
+            COALESCE(ac.en_revision, 0) AS actividades_en_revision
         FROM planes_anuales pa
         LEFT JOIN mess_rrhh.usuarios up ON up.id_usuario = pa.id_presenta
         LEFT JOIN mess_rrhh.usuarios ua ON ua.id_usuario = pa.id_aprueba
         LEFT JOIN mess_rrhh.puesto pp ON pp.id = up.puesto
         LEFT JOIN mess_rrhh.puesto pa2 ON pa2.id = ua.puesto
         LEFT JOIN mess_rrhh.usuarios ur ON ur.noEmpleado = pa.id_registra
-        LEFT JOIN mess_rrhh.departamento dpto ON dpto.id = pa.id_area
+        LEFT JOIN mess_rrhh.areas ar ON ar.id = pa.id_area
+        LEFT JOIN (
+            SELECT
+                a.id_plan_anual,
+                COUNT(*) AS total_actividades,
+                SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) = 'APROBADO' THEN 1 ELSE 0 END) AS aprobadas,
+                SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) = 'NO APROBADO' THEN 1 ELSE 0 END) AS no_aprobadas,
+                SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) NOT IN ('APROBADO', 'NO APROBADO') THEN 1 ELSE 0 END) AS en_revision
+            FROM actividades a
+            GROUP BY a.id_plan_anual
+        ) ac ON ac.id_plan_anual = pa.id
         ORDER BY pa.fecha_creacion DESC, pa.id DESC";
     $result = $conn->query($sql);
 
@@ -93,13 +107,27 @@ if ($accion === 'listar_planes') {
         $sqlFallback = "SELECT pa.*, 
                 CONCAT_WS(' - ', up.nombre, pp.puesto) AS presenta_text,
                 CONCAT_WS(' - ', ua.nombre, pa2.puesto) AS aprueba_text,
-                ur.nombre AS registra_text
+                ur.nombre AS registra_text,
+                COALESCE(ac.total_actividades, 0) AS total_actividades,
+                COALESCE(ac.aprobadas, 0) AS actividades_aprobadas,
+                COALESCE(ac.no_aprobadas, 0) AS actividades_no_aprobadas,
+                COALESCE(ac.en_revision, 0) AS actividades_en_revision
             FROM planes_anuales pa
             LEFT JOIN mess_rrhh.usuarios up ON up.id_usuario = pa.id_presenta
             LEFT JOIN mess_rrhh.usuarios ua ON ua.id_usuario = pa.id_aprueba
             LEFT JOIN mess_rrhh.puesto pp ON pp.id = up.puesto
             LEFT JOIN mess_rrhh.puesto pa2 ON pa2.id = ua.puesto
             LEFT JOIN mess_rrhh.usuarios ur ON ur.noEmpleado = pa.id_registra
+            LEFT JOIN (
+                SELECT
+                    a.id_plan_anual,
+                    COUNT(*) AS total_actividades,
+                    SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) = 'APROBADO' THEN 1 ELSE 0 END) AS aprobadas,
+                    SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) = 'NO APROBADO' THEN 1 ELSE 0 END) AS no_aprobadas,
+                    SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) NOT IN ('APROBADO', 'NO APROBADO') THEN 1 ELSE 0 END) AS en_revision
+                FROM actividades a
+                GROUP BY a.id_plan_anual
+            ) ac ON ac.id_plan_anual = pa.id
             ORDER BY pa.fecha_creacion DESC, pa.id DESC";
         $result = $conn->query($sqlFallback);
     }
@@ -326,9 +354,10 @@ if ($accion === 'crear' || $accion === 'actualizar') {
         
     } else {
         // INSERTAR un nuevo registro en planes_anuales con los datos del formulario
-        $stmtInsertPlan = $conn->prepare("INSERT INTO planes_anuales (anio, titulo_objetivos, id_presenta, id_aprueba, id_registra, id_area)
-            VALUES (?, ?, ?, ?, ?, ?)");
-        $stmtInsertPlan->bind_param('isiiii', $anioActual, $objetivosCalidad, $usuarioPresenta, $usuarioAprueba, $noEmpleado, $idArea);
+        $estatusPlan = 'EN REVISIÓN';
+        $stmtInsertPlan = $conn->prepare("INSERT INTO planes_anuales (anio, titulo_objetivos, id_presenta, id_aprueba, id_registra, id_area, estatus)
+            VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmtInsertPlan->bind_param('isiiiis', $anioActual, $objetivosCalidad, $usuarioPresenta, $usuarioAprueba, $noEmpleado, $idArea, $estatusPlan);
         $okInsert = $stmtInsertPlan->execute();
         $idPlanAnual = $stmtInsertPlan->insert_id;
         $stmtInsertPlan->close();
@@ -429,7 +458,10 @@ if ($accion === 'crear' || $accion === 'actualizar') {
                     if (!$ok) {
                         $conn->rollback();
                         header('Content-Type: application/json');
-                        echo json_encode(['success' => false]);
+                        echo json_encode([
+                            'success' => false,
+                            'error' => 'No se pudo actualizar una actividad existente: ' . $conn->error
+                        ]);
                         exit;
                     }
                     
@@ -457,7 +489,10 @@ if ($accion === 'crear' || $accion === 'actualizar') {
                     if (!$ok) {
                         $conn->rollback();
                         header('Content-Type: application/json');
-                        echo json_encode(['success' => false]);
+                        echo json_encode([
+                            'success' => false,
+                            'error' => 'No se pudo insertar una actividad: ' . $conn->error
+                        ]);
                         exit;
                     }
                 }
@@ -510,14 +545,20 @@ if ($accion === 'crear' || $accion === 'actualizar') {
         if ($totalInserted === 0) {
             $conn->rollback();
             header('Content-Type: application/json');
-            echo json_encode(['success' => false]);
+            echo json_encode([
+                'success' => false,
+                'error' => 'No se detectaron actividades válidas para guardar en el plan.'
+            ]);
             exit;
         }
     } else {
         if ($id <= 0) {
             $conn->rollback();
             header('Content-Type: application/json');
-            echo json_encode(['success' => false]);
+            echo json_encode([
+                'success' => false,
+                'error' => 'ID de actividad inválido para actualización.'
+            ]);
             exit;
         }
 
@@ -536,7 +577,10 @@ if ($accion === 'crear' || $accion === 'actualizar') {
         if ($numActividad === '' || $actividad === '' || $responsable === '') {
             $conn->rollback();
             header('Content-Type: application/json');
-            echo json_encode(['success' => false]);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Faltan datos obligatorios para actualizar: No., Actividad o Responsable.'
+            ]);
             exit;
         }
 
@@ -550,7 +594,10 @@ if ($accion === 'crear' || $accion === 'actualizar') {
         if (!$ok) {
             $conn->rollback();
             header('Content-Type: application/json');
-            echo json_encode(['success' => false]);
+            echo json_encode([
+                'success' => false,
+                'error' => 'No se pudo actualizar la actividad: ' . $conn->error
+            ]);
             exit;
         }
 
@@ -565,10 +612,20 @@ if ($accion === 'crear' || $accion === 'actualizar') {
         $stmtDelMes->close();
     }
 
+    // Para crear plan nuevo o actualizar plan completo, ya quedaron
+    // involucrados/meses insertados dentro del bloque principal.
+    if ($accion === 'crear' || ($accion === 'actualizar' && $planEditarId > 0)) {
+        $conn->commit();
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true]);
+        exit;
+    }
+}
+
 // ====================================================
 // ACCIÓN: Actualizar involucrados y meses (solo para actualizar, no para crear)
 // ====================================================
-    if ($accion === 'actualizar') {
+if ($accion === 'actualizar' && isset($planEditarId) && $planEditarId <= 0) {
         $stmtResp = $conn->prepare("INSERT INTO involucrados (id_actividad, tipo_involucrado, id_usuario)
                                     VALUES (?, 'Responsable', ?)");
         $stmtResp->bind_param('is', $id, $responsable);
@@ -609,8 +666,6 @@ if ($accion === 'crear' || $accion === 'actualizar') {
             }
             $stmtMes->close();
         }
-    }
-
     $conn->commit();
     header('Content-Type: application/json');
     echo json_encode(['success' => true]);
@@ -629,20 +684,18 @@ if ($accion === 'eliminar') {
     }
 
     $conn->begin_transaction();
-    $stmtDelInv = $conn->prepare("DELETE FROM involucrados WHERE id_actividad = ?");
+    $stmtDelInv = $conn->prepare("UPDATE planes_anuales SET estatus = 'CANCELADO', fecha_actualizacion = NOW() WHERE id = ?");
     $stmtDelInv->bind_param('i', $id);
-    $stmtDelInv->execute();
+    $okDelete = $stmtDelInv->execute();
+    $filasAfectadas = $stmtDelInv->affected_rows;
     $stmtDelInv->close();
 
-    $stmtDelMes = $conn->prepare("DELETE FROM actividad_meses WHERE id_actividad = ?");
-    $stmtDelMes->bind_param('i', $id);
-    $stmtDelMes->execute();
-    $stmtDelMes->close();
-
-    $stmtDelAct = $conn->prepare("DELETE FROM actividades WHERE id = ?");
-    $stmtDelAct->bind_param('i', $id);
-    $stmtDelAct->execute();
-    $stmtDelAct->close();
+    if (!$okDelete || $filasAfectadas <= 0) {
+        $conn->rollback();
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false]);
+        exit;
+    }
 
     $conn->commit();
     header('Content-Type: application/json');

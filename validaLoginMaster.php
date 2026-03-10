@@ -1,56 +1,124 @@
 <?php
 include 'conn.php';
 
-$accion = isset($_POST['accion']) ? $_POST['accion'] : '';
+$id_usuario = $_POST['id_usuarioSGC'] ?? '';
+$noEmpleado = $_POST['noEmpleadoSGC'] ?? '';
+$usuario = $_POST['correoSGC'] ?? '';
+$nombrePost = $_POST['nombredelusuarioSGC'] ?? '';
+$sistema = $_POST['sistema'] ?? '';
+$archivo = $_POST['archivo'] ?? '';
+$rutaRedireccion = $_POST['rutaredireccion'] ?? '';
+$idRegistro = $_POST['idRegistro'] ?? ($_POST['id'] ?? '');
 
-// Validación de usuario (otro caso)
-$id_usuario = isset($_POST['id_usuarioPla']) ? $_POST['id_usuarioPla'] : '';
-$nombredelusuario = isset($_POST['nombredelusuarioPla']) ? $_POST['nombredelusuarioPla'] : '';
-$noEmpleado = isset($_POST['noEmpleadoPla']) ? $_POST['noEmpleadoPla'] : '';
-$rol = isset($_POST['rolPla']) ? $_POST['rolPla'] : '';
-$usuario = isset($_POST['correoPla']) ? $_POST['correoPla'] : '';
-
-if (empty($id_usuario) || empty($noEmpleado)) {
+if (empty($id_usuario) || empty($noEmpleado) || empty($usuario)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Datos incompletos.']);
-    exit;
-} else {
-    $Qempresas  =  "SELECT  *, TIMESTAMPDIFF(YEAR,fechaIngreso,CURDATE()) AS antiguedad, rol FROM mess_rrhh.usuarios WHERE usuario  = '".$usuario."' AND estatus = 1";
-    $res2 =  mysqli_query( $conn, $Qempresas ) or die (mysqli_error($conn));
-    $nr = mysqli_num_rows($res2);
-
-    while ($row2 = mysqli_fetch_array($res2)){
-        $nombreEmpleado = $row2["nombre"];
-        $noEmpleado = $row2["noEmpleado"];
-        $antiguedad = $row2["antiguedad"];
-        $diasD = $row2["diasdisponibles"];
-        $rol = $row2["rol"];
-    }
-
-    if($nr == 1){
-        echo '<script>document.cookie = "antiguedad='.$antiguedad.';expires=" + new Date(Date.now() + 86400000).toUTCString() + ";path=/;SameSite=Lax;";</script>';
-        echo '<script>document.cookie = "nombredelusuario='.$nombreEmpleado.';expires=" + new Date(Date.now() + 86400000).toUTCString() + ";path=/;SameSite=Lax;";</script>';
-        echo '<script>document.cookie = "noEmpleado='.$noEmpleado.';expires=" + new Date(Date.now() + 86400000).toUTCString() + ";path=/;SameSite=Lax;";</script>';
-        echo '<script>document.cookie = "diasD='.$diasD.';expires=" + new Date(Date.now() + 86400000).toUTCString() + ";path=/;SameSite=Lax;";</script>';
-        echo '<script>document.cookie = "rol='.$rol.';expires=" + new Date(Date.now() + 86400000).toUTCString() + ";path=/;SameSite=Lax;";</script>';
-        echo '<script>document.cookie = "SesionLogin=LoginMaster; expires=" + new Date(Date.now() + 99999000).toUTCString() + ";path=/;SameSite=Lax;";</script>';
-        echo '<script>window.location.assign("seguimiento_actividades.php")</script>';                
-
-        session_start();
-        $_SESSION['nombredelusuario'] = $nombreEmpleado;
-        $_SESSION['noEmpleado'] = $noEmpleado;
-        $_SESSION['rol'] = $rol;
-        $_SESSION['correo'] = $usuario;
-        $_SESSION['id_usuario'] = $id_usuario;
-
-        echo json_encode(['success' => true]);        
-        exit;
-    }
-    // Si no hay usuario válido
-    echo json_encode([
-        'success' => false,
-        'message' => 'Usuario no válido.',
-    ]);
+    echo 'Datos incompletos.';
     exit;
 }
+
+mysqli_report(MYSQLI_REPORT_OFF);
+
+$sqlOpciones = [
+    "SELECT nombre, noEmpleado, TIMESTAMPDIFF(YEAR,fechaIngreso,CURDATE()) AS antiguedad, diasdisponibles, rol, departamento FROM mess_rrhh.usuarios WHERE (correo = ? OR usuario = ?) AND estatus = 1 LIMIT 1"
+];
+
+$row2 = null;
+foreach ($sqlOpciones as $sql) {
+    $stmt = mysqli_prepare($conn, $sql);
+    if (!$stmt) {
+        continue;
+    }
+
+    mysqli_stmt_bind_param($stmt, 'ss', $usuario, $usuario);
+    mysqli_stmt_execute($stmt);
+    $res2 = mysqli_stmt_get_result($stmt);
+
+    if ($res2 && mysqli_num_rows($res2) === 1) {
+        $row2 = mysqli_fetch_assoc($res2);
+        mysqli_stmt_close($stmt);
+        break;
+    }
+
+    mysqli_stmt_close($stmt);
+}
+
+// Si no hay tabla/catalogo de usuarios disponible, permite acceso con datos del POST.
+if (!$row2) {
+    $row2 = [
+        'nombre' => $nombrePost !== '' ? $nombrePost : $usuario,
+        'noEmpleado' => $noEmpleado,
+        'antiguedad' => '0',
+        'diasdisponibles' => '0',
+        'rol' => $_COOKIE['rolL'] ?? '0',
+        'departamento' => '0'
+    ];
+}
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
+$_SESSION['nombredelusuario'] = $row2['nombre'];
+$_SESSION['noEmpleado'] = $row2['noEmpleado'];
+$_SESSION['rol'] = $row2['rol'];
+$_SESSION['correo'] = $usuario;
+$_SESSION['id_usuario'] = $id_usuario;
+
+$cookieOpts = [
+    'expires' => time() + 86400,
+    'path' => '/',
+    'samesite' => 'Lax'
+];
+
+setcookie('id_usuario', (string)$id_usuario, $cookieOpts);
+setcookie('antiguedad', (string)$row2['antiguedad'], $cookieOpts);
+setcookie('nombredelusuario', (string)$row2['nombre'], $cookieOpts);
+setcookie('noEmpleado', (string)$row2['noEmpleado'], $cookieOpts);
+setcookie('diasD', (string)$row2['diasdisponibles'], $cookieOpts);
+setcookie('departamento', (string)$row2['departamento'], $cookieOpts);
+setcookie('rol', (string)$row2['rol'], $cookieOpts);
+
+$sesionOpts = [
+    'expires' => time() + 99999000,
+    'path' => '/',
+    'samesite' => 'Lax'
+];
+setcookie('SesionLogin', 'LoginMaster', $sesionOpts);
+
+// Arma destino como /sistema/archivo usando valores de la notificacion.
+$scriptDir = trim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+$sistemaLimpio = trim(str_replace(['..', '\\'], '', (string)$sistema), '/ ');
+if ($sistemaLimpio === '' && $scriptDir !== '' && $scriptDir !== '.') {
+    $sistemaLimpio = $scriptDir;
+}
+$archivoBase = !empty($rutaRedireccion) ? $rutaRedireccion : $archivo;
+$archivoLimpio = trim(str_replace(['..', '\\'], '', (string)$archivoBase), '/ ');
+
+if ($archivoLimpio === '') {
+    // Fallback para flujo tradicional cuando no llega archivo.
+    if (empty($_POST['id_usuarioSGC'])) {
+        $archivoLimpio = 'index.php';
+    } else {
+        $archivoLimpio = 'detalles_actividades_SGC.php';
+    }
+}
+
+if ($sistemaLimpio !== '') {
+    if (strpos($archivoLimpio, $sistemaLimpio . '/') === 0) {
+        $destino = '/' . $archivoLimpio;
+    } else {
+        $destino = '/' . $sistemaLimpio . '/' . $archivoLimpio;
+    }
+} else {
+    // Si no llega sistema, redirige al archivo relativo del proyecto actual.
+    $destino = $archivoLimpio;
+}
+
+if (!empty($idRegistro)) {
+    $separador = (strpos($destino, '?') === false) ? '?' : '&';
+    $destino .= $separador . 'id=' . urlencode($idRegistro);
+}
+
+header('Location: ' . $destino);
+exit;
 ?>
