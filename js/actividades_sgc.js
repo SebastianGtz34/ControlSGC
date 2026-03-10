@@ -222,9 +222,14 @@ $(document).ready(function() {
 });
 
 // Event listener delegado para botones de acciones del plan
-$(document).on('click', '.btn-editar-plan, .btn-eliminar-plan, .btn-ver-plan', function() {
+$(document).on('click', '.btn-editar-plan, .btn-eliminar-plan, .btn-ver-plan, .btn-comentarios-plan', function() {
     const $boton = $(this);
     const planId = $boton.data('id');
+
+    if ($boton.hasClass('btn-comentarios-plan')) {
+        verComentariosPlan(planId);
+        return;
+    }
 
     if ($boton.hasClass('btn-editar-plan')) {
         localStorage.setItem('planEditarId', planId);
@@ -615,6 +620,8 @@ function cargarPlanesAnuales() {
                                         '<i class="fas fa-pen"></i></button>' +
                                         '<button class="btn btn-sm btn-outline-warning btn-ver-plan" data-id="' + data.id + '" title="Ver detalle">' +
                                         '<i class="fas fa-eye"></i></button>' +
+                                        '<button class="btn btn-sm btn-outline-primary btn-comentarios-plan" data-id="' + data.id + '" title="Ver comentarios">' +
+                                        '<i class="fas fa-comment-dots"></i></button>' +
                                         '<button class="btn btn-sm btn-outline-danger btn-eliminar-plan" data-id="' + data.id + '" title="Eliminar">' +
                                         '<i class="fas fa-trash"></i></button>' +
                                     '</div>';
@@ -714,6 +721,73 @@ function verDetallePlan(id) {
         return;
     }
     window.location.href = 'detalles_plan_anual.php?id=' + encodeURIComponent(id);
+}
+
+function verComentariosPlan(id) {
+    if (!id) {
+        Swal.fire({ icon: 'warning', title: 'Aviso', text: 'No se encontró el plan a consultar.' });
+        return;
+    }
+
+    // Limpiar contenedor y mostrar spinner
+    $('#comentarios-container').html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>');
+
+    // Abrir modal
+    const modalComentarios = new bootstrap.Modal(document.getElementById('modalComentarios'));
+    modalComentarios.show();
+
+    $.ajax({
+        url: 'acciones_actividades.php',
+        method: 'POST',
+        dataType: 'json',
+        data: { accion: 'obtener_comentarios', id: id },
+        success: function(resp) {
+            if (!resp.success) {
+                $('#comentarios-container').html('<div class="alert alert-danger">Error: ' + (resp.error || 'No se pudieron cargar los comentarios.') + '</div>');
+                return;
+            }
+
+            const data = resp.data || [];
+            if (data.length === 0) {
+                $('#comentarios-container').html('<div class="alert alert-info">No hay actividades registradas en este plan.</div>');
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table table-bordered table-sm small align-middle"><thead><tr class="bg-light"><th>No.</th><th>Actividad</th><th>Comentario/Obs.</th></tr></thead><tbody>';
+
+            data.forEach(function(item) {
+                let comentariosHtml = '';
+
+                if (item.observaciones) {
+                    comentariosHtml += '<div><strong>Registro:</strong> ' + item.observaciones + '</div>';
+                }
+
+                if (item.observaciones_aprobado) {
+                    comentariosHtml += '<div class="text-success"><strong>Aprobación:</strong> ' + item.observaciones_aprobado + '</div>';
+                }
+
+                if (item.observaciones_no_aprobado) {
+                    comentariosHtml += '<div class="text-danger"><strong>No Aprobación:</strong> ' + item.observaciones_no_aprobado + '</div>';
+                }
+
+                if (!comentariosHtml) {
+                    comentariosHtml = '<span class="text-muted italic">Sin comentarios</span>';
+                }
+
+                html += '<tr>' +
+                            '<td class="text-center fw-bold">' + (item.num_actividad || '-') + '</td>' +
+                            '<td>' + (item.actividad || '-') + '</td>' +
+                            '<td>' + comentariosHtml + '</td>' +
+                        '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            $('#comentarios-container').html(html);
+        },
+        error: function() {
+            $('#comentarios-container').html('<div class="alert alert-danger">Error de comunicación con el servidor.</div>');
+        }
+    });
 }
 
 // Carga detalle completo de una actividad para la pagina de detalle.
