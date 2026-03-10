@@ -120,7 +120,7 @@
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; MESS 2025</span>
+                        <span>Copyright &copy; MESS <?php echo date("Y"); ?></span>
                     </div>
                 </div>
             </footer>
@@ -136,6 +136,6 @@
     <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
     <script src="js/sb-admin-2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/actividades_sgc.js"></script>
+    <script src="js/actividades_sgc.js?v=20260306"></script>
 </body>
 </html>

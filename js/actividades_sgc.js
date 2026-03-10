@@ -147,7 +147,7 @@ $(document).ready(function() {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error',
-                                text: 'No se pudo guardar.'
+                                text: (resp && resp.error) ? resp.error : 'No se pudo guardar.'
                             });
                             return;
                         }
@@ -221,20 +221,26 @@ $(document).ready(function() {
     }
 });
 
-// Event listener para el botón de editar plan
-$(document).on('click', '.btn-editar-plan', function() {
-    const planId = $(this).data('id');
-    // Guardar el ID del plan en localStorage
-    localStorage.setItem('planEditarId', planId);
-    // Redirigir a la página de registro
-    window.location.href = 'editar_plan.php';
-});
+// Event listener delegado para botones de acciones del plan
+$(document).on('click', '.btn-editar-plan, .btn-eliminar-plan, .btn-ver-plan', function() {
+    const $boton = $(this);
+    const planId = $boton.data('id');
 
-// Convierte texto a mayusculas y sin acentos.
-function convertirTexto(e) {
-    // Funcion desactivada: permite escribir en minusculas y con acentos
-    return;
-}
+    if ($boton.hasClass('btn-editar-plan')) {
+        localStorage.setItem('planEditarId', planId);
+        window.location.href = 'editar_plan.php';
+        return;
+    }
+
+    if ($boton.hasClass('btn-eliminar-plan')) {
+        eliminarActividad(planId);
+        return;
+    }
+
+    if ($boton.hasClass('btn-ver-plan')) {
+        verDetallePlan(planId);
+    }
+});
 
 // Construye el HTML de una fila del plan de actividades para una seccion dada.
 function buildPlanRow(index, seccion) {
@@ -388,15 +394,15 @@ function aplicarUsuarioASelects(idUsuario, $puestoInput, $areaInput, $puestoText
     if ($puestoInput && usuario.puesto) {
         $puestoInput.val(usuario.puesto);
     }
-    if ($areaInput && usuario.departamento) {
-        $areaInput.val(usuario.departamento);
+    if ($areaInput && usuario.area) {
+        $areaInput.val(usuario.area);
     }
 
     if ($puestoText) {
         $puestoText.text(obtenerPuestoNombre(usuario.puesto) || 'S/R');
     }
     if ($areaText) {
-        $areaText.text(obtenerAreaNombre(usuario.departamento) || 'S/R');
+        $areaText.text(obtenerAreaNombre(usuario.area) || 'S/R');
     }
 }
 
@@ -411,6 +417,78 @@ function getCookie(name) {
     let value = "; " + document.cookie;
     let parts = value.split("; " + name + "=");
     if (parts.length === 2) return parts.pop().split(";").shift();
+}
+
+// Convierte texto a mayusculas y elimina acentos.
+function convertirTexto(e) {
+    if (!e || typeof e.value !== 'string') {
+        return;
+    }
+
+    e.value = e.value
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+}
+
+// Formatea fecha a dd/mm/yyyy para mostrar en vistas.
+function formatearFechaRegistro(fecha) {
+    let fechaNormalizada = String(fecha).replace(' ', 'T');
+    let d = new Date(fechaNormalizada);
+    if (isNaN(d.getTime())) {
+        return String(fecha);
+    }
+
+    let dd = String(d.getDate()).padStart(2, '0');
+    let mm = String(d.getMonth() + 1).padStart(2, '0');
+    let yyyy = d.getFullYear();
+    return dd + '/' + mm + '/' + yyyy;
+}
+
+function aplicarEstiloDataTable(tablaId, ordenColumna, opcionesExtra) {
+    let configuracion = {
+        responsive: true,
+        language: {
+            sProcessing: "Procesando...",
+            sLengthMenu: "Mostrar _MENU_ registros",
+            sZeroRecords: "No se encontraron resultados",
+            sEmptyTable: "Ningún dato disponible en esta tabla",
+            sInfo: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+            sInfoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
+            sInfoFiltered: "(filtrado de un total de _MAX_ registros)",
+            sInfoPostFix: "",
+            sSearch: "Buscar:",
+            sUrl: "",
+            sInfoThousands: ",",
+            sLoadingRecords: "Cargando...",
+            oPaginate: {
+                sFirst: "Primero",
+                sLast: "Último",
+                sNext: "Siguiente",
+                sPrevious: "Anterior"
+            },
+            oAria: {
+                sSortAscending: ": Activar para ordenar la columna de manera ascendente",
+                sSortDescending: ": Activar para ordenar la columna de manera descendente"
+            }
+        },
+        ordering: false,
+        order: [],
+        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+        pageLength: 10,
+        searching: false
+    };
+
+    if (ordenColumna !== undefined && ordenColumna !== null && ordenColumna !== false) {
+        configuracion.ordering = true;
+        configuracion.order = [[ordenColumna, 'desc']];
+    }
+
+    if (opcionesExtra) {
+        configuracion = $.extend(true, {}, configuracion, opcionesExtra);
+    }
+
+    return $(tablaId).DataTable(configuracion);
 }
 
 // Carga planes anuales y llena la tabla.
@@ -436,36 +514,8 @@ function cargarPlanesAnuales() {
                 $('#tablaActividades tbody').empty();
             }
 
-            $('#tablaActividades').DataTable({
+            let tablaActividades = aplicarEstiloDataTable('#tablaActividades', false, {
                 paging: true,
-                pageLength: 10,
-                lengthMenu: [10, 25, 50, 100],
-                searching: true,
-                ordering: true,
-                order: [[6, 'desc']],
-                responsive: true,
-                autoWidth: true,
-                language: {
-                    processing: "Procesando...",
-                    search: "Buscar:",
-                    lengthMenu: "Mostrar _MENU_ registros",
-                    info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                    infoEmpty: "Mostrando 0 a 0 de 0 registros",
-                    infoFiltered: "(filtrado de _MAX_ registros en total)",
-                    loadingRecords: "Cargando...",
-                    zeroRecords: "No se encontraron resultados",
-                    emptyTable: "No hay datos disponibles en la tabla",
-                    paginate: {
-                        first: "Primero",
-                        previous: "Anterior",
-                        next: "Siguiente",
-                        last: "Ultimo"
-                    },
-                    aria: {
-                        sortAscending: ": activar para ordenar la columna de manera ascendente",
-                        sortDescending: ": activar para ordenar la columna de manera descendente"
-                    }
-                },
                 data: rows,
                 columns: [
                     {
@@ -509,9 +559,38 @@ function cargarPlanesAnuales() {
                         }
                     },
                     {
+                        data: null,
+                        orderable: false,
+                        render: function(data, type, row) {
+                            var total = parseInt(row.total_actividades, 10);
+                            var aprobadas = parseInt(row.actividades_aprobadas, 10);
+                            var enRevision = parseInt(row.actividades_en_revision, 10);
+                            var noAprobadas = parseInt(row.actividades_no_aprobadas, 10);
+
+                            if (isNaN(total)) total = 0;
+                            if (isNaN(aprobadas)) aprobadas = 0;
+                            if (isNaN(enRevision)) enRevision = 0;
+                            if (isNaN(noAprobadas)) noAprobadas = 0;
+
+                            return '<div class="small">' +
+                                        '<div class="fw-semibold text-dark mb-1">Total: ' + total + '</div>' +
+                                        '<span class="badge bg-warning text-dark me-1" title="En revisión">' + enRevision + '</span>' +
+                                        '<span class="badge bg-success me-1" title="Aprobadas">' + aprobadas + '</span>' +
+                                        '<span class="badge bg-danger" title="No aprobadas">' + noAprobadas + '</span>' +
+                                    '</div>';
+                        }
+                    },
+                    {
                         data: 'estatus',
                         render: function(data) {
-                            return '<span class="badge bg-primary">' + (data || 'S/R') + '</span>';
+                            let estatus = String(data || 'S/R').trim().toUpperCase();
+                            if (estatus === 'APROBADO') {
+                                return '<span class="badge bg bg-success">' + estatus + '</span>';
+                            } else if (estatus === 'NO APROBADO') {
+                                return '<span class="badge bg bg-danger">' + estatus + '</span>';
+                            } else {
+                                return '<span class="badge bg bg-warning">' + estatus + '</span>';
+                            }
                         }
                     },
                     {
@@ -532,17 +611,25 @@ function cargarPlanesAnuales() {
                         className: 'text-center',
                         render: function(data) {
                             return '<div class="btn-group" role="group" aria-label="Acciones plan">' +
-                                   '<button class="btn btn-sm btn-outline-info btn-editar-plan" data-id="' + data.id + '" title="Editar">' +
-                                   '<i class="fas fa-pen"></i></button>' +
-                                   '<button class="btn btn-sm btn-outline-warning btn-ver-plan" data-id="' + data.id + '" title="Ver detalle">' +
-                                   '<i class="fas fa-eye"></i></button>' +
-                                   '<button class="btn btn-sm btn-outline-danger btn-eliminar-plan" data-id="' + data.id + '" title="Eliminar">' +
-                                   '<i class="fas fa-trash"></i></button>' +
-                                   '</div>';
+                                        '<button class="btn btn-sm btn-outline-info btn-editar-plan" data-id="' + data.id + '" title="Editar">' +
+                                        '<i class="fas fa-pen"></i></button>' +
+                                        '<button class="btn btn-sm btn-outline-warning btn-ver-plan" data-id="' + data.id + '" title="Ver detalle">' +
+                                        '<i class="fas fa-eye"></i></button>' +
+                                        '<button class="btn btn-sm btn-outline-danger btn-eliminar-plan" data-id="' + data.id + '" title="Eliminar">' +
+                                        '<i class="fas fa-trash"></i></button>' +
+                                    '</div>';
                         }
                     }
                 ]
             });
+
+            $(window).off('resize.tablaActividades').on('resize.tablaActividades', function() {
+                if ($.fn.DataTable.isDataTable('#tablaActividades')) {
+                    $('#tablaActividades').DataTable().columns.adjust().responsive.recalc();
+                }
+            });
+
+            tablaActividades.columns.adjust().responsive.recalc();
         },
         error: function() {
             Swal.fire({
@@ -593,16 +680,16 @@ function editarActividad(id) {
 function eliminarActividad(id) {
     Swal.fire({
         title: 'Eliminar',
-        text: '¿Seguro que deseas eliminar la actividad?',
+        text: '¿Seguro que deseas cancelar la actividad?',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Si, eliminar',
+        confirmButtonText: 'Si, cancelar',
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (!result.isConfirmed) {
             return;
         }
-        // Solicita eliminacion al backend.
+        // Solicita cancelación al backend.
         $.ajax({
             url: 'acciones_actividades.php',
             method: 'POST',
@@ -613,10 +700,20 @@ function eliminarActividad(id) {
                     Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar.' });
                     return;
                 }
-                Swal.fire({ icon: 'success', title: 'Eliminado', text: 'Registro eliminado.' });
+                Swal.fire({ icon: 'success', title: 'Cancelado', text: 'Cambios realizados.' }).then(function() {
+                    cargarPlanesAnuales();
+                });
             }
         });
     });
+}
+
+function verDetallePlan(id) {
+    if (!id) {
+        Swal.fire({ icon: 'warning', title: 'Aviso', text: 'No se encontró el plan a consultar.' });
+        return;
+    }
+    window.location.href = 'detalles_plan_anual.php?id=' + encodeURIComponent(id);
 }
 
 // Carga detalle completo de una actividad para la pagina de detalle.

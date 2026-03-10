@@ -19,7 +19,7 @@
         <?php include 'menu.php'; ?>
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
-                <?php //include 'encabezado.php'; ?>
+                <?php include 'encabezado.php'; ?>
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-xl-12">
@@ -43,8 +43,8 @@
                                             <!-- SECCIÓN 6.2 Personal -->
                                             <div class="accordion-item">
                                                 <h2 class="accordion-header">
-                                                    <button class="accordion-button bg-success" type="button" data-bs-toggle="collapse" data-bs-target="#collapse6-2" aria-expanded="true" aria-controls="collapse6-2">
-                                                        <span class="fw-bold text-black">6.2 Personal</span>
+                                                    <button class="accordion-button bg-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse6-2" aria-expanded="true" aria-controls="collapse6-2">
+                                                        <span class="fw-bold text-white">6.2 Personal</span>
                                                     </button>
                                                 </h2>
                                                 <div id="collapse6-2" class="accordion-collapse collapse show" data-bs-parent="#accordionPlan">
@@ -121,8 +121,8 @@
                                             <!-- SECCIÓN 6.3 Instalaciones y condiciones ambientales -->
                                             <div class="accordion-item">
                                                 <h2 class="accordion-header">
-                                                    <button class="accordion-button bg-success collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse6-3" aria-expanded="false" aria-controls="collapse6-3">
-                                                        <span class="fw-bold text-black">6.3 Instalaciones y condiciones ambientales</span>
+                                                    <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse6-3" aria-expanded="false" aria-controls="collapse6-3">
+                                                        <span class="fw-bold text-white">6.3 Instalaciones y condiciones ambientales</span>
                                                     </button>
                                                 </h2>
                                                 <div id="collapse6-3" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
@@ -188,17 +188,19 @@
                                                 </tbody>
                                             </table>
                                         </div>
-                                        <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
-                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaPlan('6.3')">Agregar fila</button>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaPlan('6.3')">Quitar fila</button>
-                                        </div>
+
+                                            <!-- Botones agregar/quitar fila para sección 6.3 -->
+                                            <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
+                                                <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaPlan('6.3')">Agregar fila</button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaPlan('6.3')">Quitar fila</button>
+                                            </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
-                                    <button class="accordion-button bg-success collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse6-4" aria-expanded="false" aria-controls="collapse6-4">
-                                        <span class="fw-bold text-black">6.4 Equipamiento</span>
+                                    <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse6-4" aria-expanded="false" aria-controls="collapse6-4">
+                                        <span class="fw-bold text-white">6.4 Equipamiento</span>
                                     </button>
                                 </h2>
                                 <div id="collapse6-4" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
@@ -275,8 +277,8 @@
                             <!-- SECCIÓN 7.2 Selección, verificación y validación de métodos -->
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
-                                    <button class="accordion-button bg-success collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse7-2" aria-expanded="false" aria-controls="collapse7-2">
-                                        <span class="fw-bold text-black">7.2 Selección, verificación y validación de métodos</span>
+                                    <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse7-2" aria-expanded="false" aria-controls="collapse7-2">
+                                        <span class="fw-bold text-white">7.2 Selección, verificación y validación de métodos</span>
                                     </button>
                                 </h2>
                                 <div id="collapse7-2" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
@@ -353,8 +355,8 @@
                             <!-- SECCIÓN 7.6 Evaluación de la incertidumbre de la medición -->
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
-                                    <button class="accordion-button bg-success collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse7-6" aria-expanded="false" aria-controls="collapse7-6">
-                                        <span class="fw-bold text-black">7.6 Evaluación de la incertidumbre de la medición</span>
+                                    <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse7-6" aria-expanded="false" aria-controls="collapse7-6">
+                                        <span class="fw-bold text-white">7.6 Evaluación de la incertidumbre de la medición</span>
                                     </button>
                                 </h2>
                                 <div id="collapse7-6" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
@@ -431,8 +433,8 @@
                             <!-- SECCIÓN 7.7 Aseguramiento de la validez de los resultados -->
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
-                                    <button class="accordion-button bg-success collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse7-7" aria-expanded="false" aria-controls="collapse7-7">
-                                        <span class="fw-bold text-black">7.7 Aseguramiento de la validez de los resultados</span>
+                                    <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse7-7" aria-expanded="false" aria-controls="collapse7-7">
+                                        <span class="fw-bold text-white">7.7 Aseguramiento de la validez de los resultados</span>
                                     </button>
                                 </h2>
                                 <div id="collapse7-7" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
@@ -509,8 +511,8 @@
                             <!-- SECCIÓN 7.11 Control de los datos y gestión de la información -->
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
-                                    <button class="accordion-button bg-success collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse7-11" aria-expanded="false" aria-controls="collapse7-11">
-                                        <span class="fw-bold text-black">7.11 Control de los datos y gestión de la información</span>
+                                    <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse7-11" aria-expanded="false" aria-controls="collapse7-11">
+                                        <span class="fw-bold text-white">7.11 Control de los datos y gestión de la información</span>
                                     </button>
                                 </h2>
                                 <div id="collapse7-11" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
@@ -587,8 +589,8 @@
                             <!-- SECCIÓN 8.8 Auditorías internas Opción A -->
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
-                                    <button class="accordion-button bg-success collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse8-8" aria-expanded="false" aria-controls="collapse8-8">
-                                        <span class="fw-bold text-black">8.8 Auditorías internas Opción A</span>
+                                    <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse8-8" aria-expanded="false" aria-controls="collapse8-8">
+                                        <span class="fw-bold text-white">8.8 Auditorías internas Opción A</span>
                                     </button>
                                 </h2>
                                 <div id="collapse8-8" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
@@ -665,8 +667,8 @@
                             <!-- SECCIÓN IV. Otras -->
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
-                                    <button class="accordion-button bg-success collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIV" aria-expanded="false" aria-controls="collapseIV">
-                                        <span class="fw-bold text-black">IV. Otras</span>
+                                    <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIV" aria-expanded="false" aria-controls="collapseIV">
+                                        <span class="fw-bold text-white">IV. Otras</span>
                                     </button>
                                 </h2>
                                 <div id="collapseIV" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
@@ -743,7 +745,7 @@
 
                         <!-- SECCIÓN Firmas y aprobación -->
                         <div class="fw-bold text-uppercase bg-light py-2 px-2 mb-3 mt-4 border border-dark">Firmas y aprobación del plan</div>
-                        <div class="row g-3 mb-3">
+                            <div class="row g-3 mb-3">
                             <div class="col-lg-6">
                                 <div class="border border-dark p-3">
                                     <input type="hidden" name="puesto_presenta" id="puestoPresenta">
@@ -785,7 +787,7 @@
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; MESS 2025</span>
+                        <span>Copyright &copy; MESS <?php echo date("Y"); ?></span>
                     </div>
                 </div>
             </footer>
@@ -803,6 +805,6 @@
     <script src="https://cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js" defer="defer"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/actividades_sgc.js"></script>
+    <script src="js/actividades_sgc.js?v=20260306"></script>
 </body>
 </html>
