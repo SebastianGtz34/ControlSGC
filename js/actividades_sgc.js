@@ -1,12 +1,25 @@
 let usuariosCache = [];
 let puestosCache = [];
 let areasCache = [];
+let puedeVerOpcionesPlan = false;
+
+function obtenerCookieValor(nombreCookie) {
+    let cookies = document.cookie ? document.cookie.split(';') : [];
+    let nombreBuscado = String(nombreCookie || '').trim() + '=';
+    for (let i = 0; i < cookies.length; i++) {
+        let cookie = cookies[i].trim();
+        if (cookie.indexOf(nombreBuscado) === 0) {
+            return decodeURIComponent(cookie.substring(nombreBuscado.length));
+        }
+    }
+    return '';
+}
 
 // Inicializa selectores y eventos si existen en la pagina.
 $(document).ready(function() {
     // Si estamos en la pagina de detalle, cargar datos
     if ($('#numActividad').length && window.location.pathname.includes('detalle_actividad_SGC.php')) {
-        let idDetalle = getQueryParam('id');
+        let idDetalle = obtenerParametroUrl('id');
         if (idDetalle) {
             cargarDetalleCompleto(idDetalle);
         } else {
@@ -15,7 +28,7 @@ $(document).ready(function() {
     }
 
     if ($('#tablaActividades').length) {
-        cargarPlanesAnuales();
+        cargarListadoPlanes();
     }
 
     if ($('#formActividad').length) {
@@ -41,12 +54,12 @@ $(document).ready(function() {
             }
 
             // Carga datos en modo edicion si viene id en la URL (para actividades individuales)
-            let idEditar = getQueryParam('id');
+            let idEditar = obtenerParametroUrl('id');
             if (idEditar) {
                 $('#tituloRegistroSGC').text('Editar Registro SGC');
                 document.title = 'Editar Registro SGC';
                 enEdicion = true;
-                editarActividad(idEditar);
+                cargarActividadParaEditar(idEditar);
             }
         };
 
@@ -56,6 +69,59 @@ $(document).ready(function() {
         // Envia alta o actualizacion de actividad.
         $('#formActividad').on('submit', function(e) {
             e.preventDefault();
+
+            const guardarAvanceDesdeValidacion = function() {
+                let planEditarIdAvance = String($('#plan_editar_id').val() || '').trim();
+                let accionAvance = planEditarIdAvance ? 'actualizar' : 'crear';
+                let datos = $('#formActividad').serialize() + '&accion=' + accionAvance + '&guardar_avance=1';
+
+                $.ajax({
+                    url: 'acciones_actividades.php',
+                    method: 'POST',
+                    dataType: 'json',
+                    data: datos,
+                    success: function(resp) {
+                        if (!resp || !resp.success) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'No se pudo guardar avance',
+                                text: (resp && resp.error) ? resp.error : 'Verifica que exista al menos un renglon de actividad completo.'
+                            });
+                            return;
+                        }
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Avance guardado',
+                            text: 'El avance se guardo.'
+                        })
+                        
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No se pudo guardar el avance.'
+                        });
+                    }
+                });
+            };
+
+            const preguntarGuardarAvance = function(titulo, mensaje) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: titulo,
+                    text: mensaje,
+                    showDenyButton: true,
+                    showCancelButton: false,
+                    confirmButtonText: 'Corregir',
+                    denyButtonText: 'Guardar avance',
+                    denyButtonColor: '#0c7c15',
+                }).then(function(result) {
+                    if (result.isDenied) {
+                        guardarAvanceDesdeValidacion();
+                    }
+                });
+            };
             
             // Validar firmas
             let idArea = $('#areaPlan').val();
@@ -65,72 +131,105 @@ $(document).ready(function() {
             let usuarioAprueba = $('#usuarioAprueba').val();
             
             if (!idArea || !puestoPresenta || !usuarioPresenta || !puestoAprueba || !usuarioAprueba) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Firmas incompletas',
-                    text: 'Debes seleccionar el area, puesto y usuario que elabora y quien aprueba.'
-                });
+                preguntarGuardarAvance(
+                    'Firmas incompletas',
+                    'Debes seleccionar el area, puesto y usuario que elabora y quien aprueba.'
+                );
                 return;
             }
             
             // Validar que haya al menos una actividad completa por sección
-            let secciones = ['6.2', '6.3', '6.4', '7.2', '7.6', '7.7', '7.11', '8.8'];
+            let secciones = ['6.2', '6.3', '6.4', '7.2', '7.6', '7.7', '8.3', '8.8', '8.9'];
             let seccionesNombres = {
                 '6.2': '6.2 Personal',
-                '6.3': '6.3 Infraestructura',
-                '6.4': '6.4 Ambiente de Trabajo',
-                '7.2': '7.2 Determinación de los Requisitos',
-                '7.6': '7.6 Control de Cambios',
-                '7.7': '7.7 Control de Salidas no Conformes',
-                '7.11': '7.11 Control de Dispositivos de Seguimiento y Medición',
-                '8.8': '8.8 Revisión por la Dirección'
+                '6.3': '6.3 Instalaciones y condiciones ambientales',
+                '6.4': '6.4 Equipamiento',
+                '7.2': '7.2 Selección, verificación y validación de métodos',
+                '7.6': '7.6 Evaluación de la incertidumbre de la medición',
+                '7.7': '7.7 Aseguramiento de la validez de los resultados',
+                '8.3': '8.3 Control de documentos del sistema de gestión',
+                '8.8': '8.8 Auditorías internas y externas',
+                '8.9': '8.9 Revisión por la dirección',
             };
             
             for (let i = 0; i < secciones.length; i++) {
                 let seccion = secciones[i];
                 let seccionId = seccion === 'iv' ? 'iv' : seccion;
-                let $tbody = getPlanRowsTbody(seccionId);
+                let $tbody = obtenerTbodySeccionPlan(seccionId);
                 let filas = $tbody.find('.plan-row');
                 
                 if (filas.length === 0) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Sección incompleta',
-                        text: 'La sección "' + seccionesNombres[seccion] + '" no tiene filas.'
-                    });
+                    preguntarGuardarAvance(
+                        'Sección incompleta',
+                        'La sección "' + seccionesNombres[seccion] + '" no tiene filas.'
+                    );
                     return;
                 }
                 
                 let tieneActividad = false;
+                let hayFilaIncompleta = false;
+                let detalleFilaIncompleta = '';
                 
-                filas.each(function() {
+                filas.each(function(indexFila) {
                     // Buscar los elementos dentro de esta fila
+                    let inputNumeroActividad = $(this).find('input[name*="num_actividad[' + seccionId + ']"]');
                     let textareaActividad = $(this).find('textarea[name*="actividad[' + seccionId + ']"]');
                     let selectResponsable = $(this).find('select[name*="responsable[' + seccionId + ']"]');
                     let checkboxesMeses = $(this).find('input[name*="meses[' + seccionId + ']"]:checked');
+                    let selectParticipantes = $(this).find('select[name*="participantes[' + seccionId + ']"]');
                     
+                    let numeroActividad = inputNumeroActividad.val() ? inputNumeroActividad.val().trim() : '';
                     let actividad = textareaActividad.val() ? textareaActividad.val().trim() : '';
                     let responsable = selectResponsable.val();
                     let meses = checkboxesMeses.length;
-                    
-                    if (actividad && responsable && meses > 0) {
-                        tieneActividad = true;
+                    let participantes = selectParticipantes.val() || [];
+
+                    let tieneContenido = (actividad !== '' || responsable || meses > 0 || participantes.length > 0);
+                    let filaCompleta = (actividad !== '' && responsable && meses > 0);
+
+                    if (tieneContenido && !filaCompleta) {
+                        let camposFaltantes = [];
+                        if (actividad === '') {
+                            camposFaltantes.push('Actividad');
+                        }
+                        if (!responsable) {
+                            camposFaltantes.push('Responsable');
+                        }
+                        if (meses === 0) {
+                            camposFaltantes.push('Mes');
+                        }
+
+                        let etiquetaFila = numeroActividad || ('fila ' + String(indexFila + 1));
+                        detalleFilaIncompleta = 'La actividad "' + etiquetaFila + '" en la sección "' + seccionesNombres[seccion] + '" está incompleta. Falta: ' + camposFaltantes.join(', ') + '.';
+                        hayFilaIncompleta = true;
                         return false; // break
                     }
+                    
+                    if (filaCompleta) {
+                        tieneActividad = true;
+                    }
                 });
-                
-                if (!tieneActividad) {
+
+                if (hayFilaIncompleta) {
                     Swal.fire({
                         icon: 'warning',
-                        title: 'Sección incompleta',
-                        text: 'La sección "' + seccionesNombres[seccion] + '" debe tener al menos una actividad completa (actividad, responsable y al menos un mes seleccionado).'
+                        title: 'Actividad incompleta',
+                        text: detalleFilaIncompleta || 'Hay un renglon incompleto. Completa actividad, responsable y al menos un mes.'
                     });
+                    return;
+                }
+                
+                if (!tieneActividad) {
+                    preguntarGuardarAvance(
+                        'Sección incompleta',
+                        'La sección "' + seccionesNombres[seccion] + '" debe tener al menos una actividad completa.'
+                    );
                     return;
                 }
             }
             
-            let accion = $('#actividad_id').val() ? 'actualizar' : 'crear';
-            let planEditarId = $('#plan_editar_id').val();
+            let planEditarId = String($('#plan_editar_id').val() || '').trim();
+            let accion = planEditarId ? 'actualizar' : ($('#actividad_id').val() ? 'actualizar' : 'crear');
             
             // Función para guardar los datos
             const guardarDatos = function() {
@@ -156,35 +255,10 @@ $(document).ready(function() {
                             title: 'Listo',
                             text: 'Registro guardado.'
                         }).then(function() {
-                            if (enEdicion || $('#actividad_id').val() || planEditarId) {
-                                if (planEditarId) {
-                                    localStorage.removeItem('planEditarId');
-                                }
-                                window.location.href = 'detalles_actividades_SGC.php';
-                                return;
+                            if (planEditarId) {
+                                localStorage.removeItem('planEditarId');
                             }
-                            $('#formActividad')[0].reset();
-                            resetPlanRows();
-
-                            if ($('#areaPlan').length) {
-                                $('#areaPlan').val('');
-                            }
-                            if ($('#puestoPresenta').length) {
-                                $('#puestoPresenta').val('');
-                            }
-                            if ($('#usuarioPresenta').length) {
-                                $('#usuarioPresenta').val('').trigger('change');
-                            }
-                            if ($('#puestoAprueba').length) {
-                                $('#puestoAprueba').val('');
-                            }
-                            if ($('#usuarioAprueba').length) {
-                                $('#usuarioAprueba').val('').trigger('change');
-                            }
-                            $('#usuarioPresentaArea').text('S/R');
-                            $('#usuarioPresentaPuesto').text('S/R');
-                            $('#usuarioApruebaArea').text('S/R');
-                            $('#usuarioApruebaPuesto').text('S/R');
+                            //window.location.href = 'detalles_actividades_SGC.php';
                         });
                     },
                     error: function() {
@@ -233,17 +307,17 @@ $(document).on('click', '.btn-editar-plan, .btn-eliminar-plan, .btn-ver-plan', f
     }
 
     if ($boton.hasClass('btn-eliminar-plan')) {
-        eliminarActividad(planId);
+        eliminarPlan(planId);
         return;
     }
 
     if ($boton.hasClass('btn-ver-plan')) {
-        verDetallePlan(planId);
+        abrirDetallePlan(planId);
     }
 });
 
 // Construye el HTML de una fila del plan de actividades para una seccion dada.
-function buildPlanRow(index, seccion) {
+function crearFilaPlanHtml(index, seccion, id_actividad) {
     let meses = [1,2,3,4,5,6,7,8,9,10,11,12];
     let mesCeldas = meses.map(function(m) {
         return '<td class="text-center">' +
@@ -254,17 +328,19 @@ function buildPlanRow(index, seccion) {
     let seccionKey = String(seccion).toLowerCase();
     let baseNumero = seccionKey === 'iv' ? 'IV' : seccion;
     let numeroActividad = baseNumero + '.' + (index + 1);
+    let actividadId = Number(id_actividad) > 0 ? Number(id_actividad) : '';
 
     return '<tr class="plan-row" data-row="' + index + '" data-seccion="' + seccion + '">' +
         '<td class="text-center">' +
+            '<input type="hidden" name="actividad_id[' + seccion + '][' + index + ']" value="' + actividadId + '">' +
             '<input type="text" class="form-control form-control-sm" name="num_actividad[' + seccion + '][' + index + ']" value="' + numeroActividad + '" readonly>' +
         '</td>' +
         '<td>' +
-            '<textarea class="form-control form-control-sm" name="actividad[' + seccion + '][' + index + ']" rows="3" required onkeyup="convertirTexto(this)"></textarea>' +
+            '<textarea class="form-control form-control-sm" name="actividad[' + seccion + '][' + index + ']" rows="3" required></textarea>' +
         '</td>' +
         mesCeldas +
         '<td>' +
-            '<select class="form-select form-select-sm responsable-select" name="responsable[' + seccion + '][' + index + ']" required>' +
+            '<select class="form-select form-select-sm responsable-select" name="responsable[' + seccion + '][' + index + ']">' +
                 '<option value="">Selecciona...</option>' +
             '</select>' +
         '</td>' +
@@ -272,58 +348,86 @@ function buildPlanRow(index, seccion) {
             '<select class="form-select form-select-sm participantes-select" name="participantes[' + seccion + '][' + index + '][]" multiple></select>' +
         '</td>' +
         '<td>' +
-            '<textarea class="form-control form-control-sm" name="observaciones[' + seccion + '][' + index + ']" rows="3" onkeyup="convertirTexto(this)"></textarea>' +
+            '<textarea class="form-control form-control-sm" name="observaciones[' + seccion + '][' + index + ']" rows="3"></textarea>' +
+        '</td>' +
+        '<td class="text-center">' +
+            '<button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFilaPlan(this)" title="Quitar fila">' +
+                '<i class="fas fa-trash-alt"></i>' +
+            '</button>' +
         '</td>' +
     '</tr>';
 }
 
-function getPlanRowsTbody(seccion) {
+function obtenerTbodySeccionPlan(seccion) {
     let key = String(seccion).toLowerCase();
     return $('#' + $.escapeSelector('plan-rows-' + key));
 }
 
-function agregarFilaPlan(seccion) {
-    let $tbody = getPlanRowsTbody(seccion);
+function agregarFilaSeccionPlan(seccion) {
+    let $tbody = obtenerTbodySeccionPlan(seccion);
     let $rows = $tbody.find('.plan-row');
     let nextIndex = $rows.length;
-    $tbody.append(buildPlanRow(nextIndex, seccion));
+    $tbody.append(crearFilaPlanHtml(nextIndex, seccion));
     let $newRow = $tbody.find('.plan-row').last();
     poblarUsuariosEnFila($newRow);
     actualizarNumerosActividades(seccion);
 }
 
-function quitarFilaPlan(seccion) {
-    let $tbody = getPlanRowsTbody(seccion);
-    let $rows = $tbody.find('.plan-row');
-    if ($rows.length <= 1) {
+function eliminarFilaPlan(btn) {
+    let $fila = $(btn).closest('.plan-row');
+    let seccion = $fila.data('seccion');
+    let $tbody = $fila.closest('tbody');
+    if ($tbody.find('.plan-row').length <= 1) {
         return;
     }
-    $rows.last().remove();
+    $fila.remove();
     actualizarNumerosActividades(seccion);
 }
 
 function actualizarNumerosActividades(seccion) {
-    let $tbody = getPlanRowsTbody(seccion);
+    let $tbody = obtenerTbodySeccionPlan(seccion);
     let $rows = $tbody.find('.plan-row');
     let seccionKey = String(seccion).toLowerCase();
     let baseNumero = seccionKey === 'iv' ? 'IV' : seccion;
     
     $rows.each(function(index) {
-        let $input = $(this).find('input[name^="num_actividad["]');
+        let $row = $(this);
+        $row.attr('data-row', index);
+
+        // Reindexar names para que backend reciba indices continuos tras eliminar filas.
+        $row.find('input[name^="actividad_id["]').attr('name', 'actividad_id[' + seccion + '][' + index + ']');
+        $row.find('input[name^="num_actividad["]').attr('name', 'num_actividad[' + seccion + '][' + index + ']');
+        $row.find('textarea[name^="actividad["]').attr('name', 'actividad[' + seccion + '][' + index + ']');
+        $row.find('textarea[name^="observaciones["]').attr('name', 'observaciones[' + seccion + '][' + index + ']');
+        $row.find('select[name^="responsable["]').attr('name', 'responsable[' + seccion + '][' + index + ']');
+        $row.find('select[name^="participantes["]').attr('name', 'participantes[' + seccion + '][' + index + '][]');
+        $row.find('input[type="checkbox"][name^="meses["]').attr('name', 'meses[' + seccion + '][' + index + '][]');
+
+        let $input = $row.find('input[name^="num_actividad["]');
         let numeroActividad = baseNumero + '.' + (index + 1);
         $input.val(numeroActividad);
     });
 }
 
-function resetPlanRows() {
-    let secciones = ['6.2', '6.3', '6.4', '7.2', '7.6', '7.7', '7.11', '8.8', 'iv'];
+function reiniciarFilasPlan() {
+    let secciones = ['6.2', '6.3', '6.4', '7.2', '7.6', '7.7', '8.3', '8.8', '8.9', 'iv'];
     secciones.forEach(function(seccion) {
-        let $tbody = getPlanRowsTbody(seccion);
+        let $tbody = obtenerTbodySeccionPlan(seccion);
         if ($tbody.length === 0) return; // Skip if tbody doesn't exist
         $tbody.find('.plan-row').remove();
-        $tbody.append(buildPlanRow(0, seccion));
+        $tbody.append(crearFilaPlanHtml(0, seccion));
         poblarUsuariosEnFila($tbody.find('.plan-row').first());
         actualizarNumerosActividades(seccion);
+    });
+}
+
+function inicializarSelect2Estandar($elemento, placeholder) {
+    if ($elemento.hasClass('select2-hidden-accessible')) {
+        $elemento.select2('destroy');
+    }
+    $elemento.select2({
+        placeholder: placeholder,
+        width: '100%'
     });
 }
 
@@ -339,21 +443,8 @@ function poblarUsuariosEnFila($row) {
         $participantes.append('<option value="' + usr.id_usuario + '">' + usr.nombre + '</option>');
     });
 
-    if ($responsable.hasClass('select2-hidden-accessible')) {
-        $responsable.select2('destroy');
-    }
-    if ($participantes.hasClass('select2-hidden-accessible')) {
-        $participantes.select2('destroy');
-    }
-
-    $responsable.select2({
-        placeholder: 'Selecciona responsable',
-        width: '100%'
-    });
-    $participantes.select2({
-        placeholder: 'Selecciona participantes',
-        width: '100%'
-    });
+    inicializarSelect2Estandar($responsable, 'Selecciona responsable');
+    inicializarSelect2Estandar($participantes, 'Selecciona participantes');
 }
 
 function obtenerUsuarioPorId(idUsuario) {
@@ -407,32 +498,13 @@ function aplicarUsuarioASelects(idUsuario, $puestoInput, $areaInput, $puestoText
 }
 
 // Obtiene el valor de un parametro en la URL.
-function getQueryParam(key) {
+function obtenerParametroUrl(key) {
     let params = new URLSearchParams(window.location.search);
     return params.get(key);
 }
 
-// Obtiene el valor de una cookie por su nombre.
-function getCookie(name) {
-    let value = "; " + document.cookie;
-    let parts = value.split("; " + name + "=");
-    if (parts.length === 2) return parts.pop().split(";").shift();
-}
-
-// Convierte texto a mayusculas y elimina acentos.
-function convertirTexto(e) {
-    if (!e || typeof e.value !== 'string') {
-        return;
-    }
-
-    e.value = e.value
-        .toUpperCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-}
-
 // Formatea fecha a dd/mm/yyyy para mostrar en vistas.
-function formatearFechaRegistro(fecha) {
+function formatearFechaDdMmYyyy(fecha) {
     let fechaNormalizada = String(fecha).replace(' ', 'T');
     let d = new Date(fechaNormalizada);
     if (isNaN(d.getTime())) {
@@ -445,7 +517,8 @@ function formatearFechaRegistro(fecha) {
     return dd + '/' + mm + '/' + yyyy;
 }
 
-function aplicarEstiloDataTable(tablaId, ordenColumna, opcionesExtra) {
+// Aplica estilos y configuraciones a una tabla dada, con opciones para ordenamiento, paginación y lenguaje.
+function inicializarDataTableEstandar(tablaId, ordenColumna, opcionesExtra) {
     let configuracion = {
         responsive: true,
         language: {
@@ -491,18 +564,120 @@ function aplicarEstiloDataTable(tablaId, ordenColumna, opcionesExtra) {
     return $(tablaId).DataTable(configuracion);
 }
 
+// Escapa caracteres especiales para usarlos en búsquedas de DataTables con regex.
+function escaparRegexDataTable(valor) {
+    return String(valor || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Obtiene los valores únicos de una columna específica de la tabla, formateados y ordenados alfabéticamente.
+function obtenerValoresUnicosDeColumna(tabla, indiceColumna) {
+    return tabla.column(indiceColumna).data().toArray()
+        .map(function(valor) {
+            return String(valor || 'S/R').trim() || 'S/R';
+        })
+        .filter(function(valor, indice, valores) {
+            return valores.indexOf(valor) === indice;
+        })
+        .sort(function(a, b) {
+            return a.localeCompare(b, 'es', { sensitivity: 'base' });
+        });
+}
+
+// Llena un select con opciones dadas, manteniendo el valor seleccionado si sigue disponible.
+function poblarSelectFiltro($select, opciones) {
+    const valorActual = $select.val() || '';
+    $select.find('option:not(:first)').remove();
+
+    opciones.forEach(function(opcion) {
+        $select.append('<option value="' + opcion + '">' + opcion + '</option>');
+    });
+
+    $select.val(opciones.indexOf(valorActual) >= 0 ? valorActual : '');
+}
+
+// Aplica un filtro de búsqueda exacta a una columna específica de la tabla.
+function aplicarFiltroExactoColumna(tabla, indiceColumna, valor) {
+    if (!valor) {
+        tabla.column(indiceColumna).search('');
+        return;
+    }
+
+    tabla.column(indiceColumna).search('^' + escaparRegexDataTable(valor) + '$', true, false);
+}
+
+// Inicializa los filtros de la tabla de actividades y sus eventos asociados.
+function inicializarFiltrosPlanes(tablaActividades) {
+    const $filtroPresenta = $('#filtroPresenta');
+    const $filtroArea = $('#filtroArea');
+    const $filtroEstatus = $('#filtroEstatus');
+    const $btnLimpiar = $('#limpiarFiltrosTablaActividades');
+
+    poblarSelectFiltro($filtroPresenta, obtenerValoresUnicosDeColumna(tablaActividades, 1));
+    poblarSelectFiltro($filtroArea, obtenerValoresUnicosDeColumna(tablaActividades, 4));
+    poblarSelectFiltro($filtroEstatus, obtenerValoresUnicosDeColumna(tablaActividades, 6));
+
+    $filtroPresenta.off('change.filtroActividades').on('change.filtroActividades', function() {
+        aplicarFiltroExactoColumna(tablaActividades, 1, $(this).val());
+        tablaActividades.draw();
+    });
+
+    $filtroArea.off('change.filtroActividades').on('change.filtroActividades', function() {
+        aplicarFiltroExactoColumna(tablaActividades, 4, $(this).val());
+        tablaActividades.draw();
+    });
+
+    $filtroEstatus.off('change.filtroActividades').on('change.filtroActividades', function() {
+        aplicarFiltroExactoColumna(tablaActividades, 6, $(this).val());
+        tablaActividades.draw();
+    });
+
+    $btnLimpiar.off('click.filtroActividades').on('click.filtroActividades', function() {
+        $filtroPresenta.val('');
+        $filtroArea.val('');
+        $filtroEstatus.val('');
+        tablaActividades.columns().search('');
+        tablaActividades.draw();
+    });
+}
+
 // Carga planes anuales y llena la tabla.
-function cargarPlanesAnuales() {
+function cargarListadoPlanes() {
     if (!$('#tablaActividades').length) {
         return;
     }
 
-    $.ajax({
+    const noEmpleado = obtenerCookieValor('noEmpleado');
+
+    const peticionPlanes = $.ajax({
         url: 'acciones_actividades.php',
         method: 'POST',
         dataType: 'json',
-        data: { accion: 'listar_planes' },
-        success: function(resp) {
+        data: { accion: 'listar_planes' }
+    });
+
+    const peticionPermiso = $.ajax({
+        url: '../loginMaster/acciones_globales.php',
+        method: 'POST',
+        dataType: 'json',
+        data: {
+            accion: 'ValidarPermisos',
+            noEmpleado: noEmpleado,
+            sistema: 'controlSGC',
+            opcion: 'verOpcionesPlan'
+        }
+    });
+
+    $.when(peticionPlanes, peticionPermiso)
+        .done(function(resPlanes, resPermiso) {
+            let resp = resPlanes[0] || {};
+            let respPermiso = resPermiso[0] || {};
+
+            if (respPermiso && respPermiso.status === 'success' && respPermiso.data && respPermiso.data[0]) {
+                puedeVerOpcionesPlan = Number(respPermiso.data[0].cuantos || 0) > 0;
+            } else {
+                puedeVerOpcionesPlan = false;
+            }
+
             if (!resp.success) {
                 return;
             }
@@ -514,8 +689,11 @@ function cargarPlanesAnuales() {
                 $('#tablaActividades tbody').empty();
             }
 
-            let tablaActividades = aplicarEstiloDataTable('#tablaActividades', false, {
+            let tablaActividades = inicializarDataTableEstandar('#tablaActividades', false, {
                 paging: true,
+                searching: true,
+                dom: 'lrtip',
+                orderCellsTop: true,
                 data: rows,
                 columns: [
                     {
@@ -583,13 +761,20 @@ function cargarPlanesAnuales() {
                     {
                         data: 'estatus',
                         render: function(data) {
-                            let estatus = String(data || 'S/R').trim().toUpperCase();
-                            if (estatus === 'APROBADO') {
-                                return '<span class="badge bg bg-success">' + estatus + '</span>';
-                            } else if (estatus === 'NO APROBADO') {
-                                return '<span class="badge bg bg-danger">' + estatus + '</span>';
-                            } else {
-                                return '<span class="badge bg bg-warning">' + estatus + '</span>';
+                                let estatus = String(data || '').trim().toUpperCase();
+                                let estatusNormalizado = estatus.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                let etiqueta = estatus.replace(/_/g, ' ') || 'EN REVISION';
+                            if (estatusNormalizado === 'CUMPLIO') {
+                                    return '<span class="badge bg bg-success">' + etiqueta + '</span>';
+                            } else if (estatusNormalizado === 'NO CUMPLIO') {
+                                    return '<span class="badge bg bg-danger text-white">' + etiqueta + '</span>';
+                                } else if (estatusNormalizado === 'CANCELADO') {
+                                    return '<span class="badge bg bg-dark text-white">' + etiqueta + '</span>';
+                                } else if (estatusNormalizado === 'EN REVISION' || estatus === '') {
+                                    return '<span class="badge bg bg-info text-dark">' + etiqueta + '</span>';
+                                } else {
+                                    // INCOMPLETO u otro.
+                                    return '<span class="badge bg bg-warning text-dark">' + etiqueta + '</span>';
                             }
                         }
                     },
@@ -610,6 +795,12 @@ function cargarPlanesAnuales() {
                         orderable: false,
                         className: 'text-center',
                         render: function(data) {
+                            if (!puedeVerOpcionesPlan) {
+                                return '<div class="btn-group" role="group" aria-label="Acciones plan">' +
+                                        '<button class="btn btn-sm btn-outline-warning btn-ver-plan" data-id="' + data.id + '" title="Ver detalle">' +
+                                        '<i class="fas fa-eye"></i></button>' +
+                                    '</div>';
+                            }
                             return '<div class="btn-group" role="group" aria-label="Acciones plan">' +
                                         '<button class="btn btn-sm btn-outline-info btn-editar-plan" data-id="' + data.id + '" title="Editar">' +
                                         '<i class="fas fa-pen"></i></button>' +
@@ -623,6 +814,8 @@ function cargarPlanesAnuales() {
                 ]
             });
 
+            inicializarFiltrosPlanes(tablaActividades);
+
             $(window).off('resize.tablaActividades').on('resize.tablaActividades', function() {
                 if ($.fn.DataTable.isDataTable('#tablaActividades')) {
                     $('#tablaActividades').DataTable().columns.adjust().responsive.recalc();
@@ -630,19 +823,18 @@ function cargarPlanesAnuales() {
             });
 
             tablaActividades.columns.adjust().responsive.recalc();
-        },
-        error: function() {
+        })
+        .fail(function() {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
                 text: 'No se pudo cargar la tabla de planes.'
             });
-        }
-    });
+        });
 }
 
 // Obtiene detalle de actividad y llena el formulario.
-function editarActividad(id) {
+function cargarActividadParaEditar(id) {
     // Consulta detalle de actividad.
     $.ajax({
         url: 'acciones_actividades.php',
@@ -655,7 +847,7 @@ function editarActividad(id) {
                 return;
             }
             let a = resp.data.actividad;
-            resetPlanRows();
+            reiniciarFilasPlan();
             let $row = $('.plan-row').first();
             $('#actividad_id').val(a.id);
             $row.find('input[name^="num_actividad"]').val(a.num_actividad);
@@ -677,7 +869,7 @@ function editarActividad(id) {
 }
 
 // Confirma y elimina la actividad.
-function eliminarActividad(id) {
+function eliminarPlan(id) {
     Swal.fire({
         title: 'Eliminar',
         text: '¿Seguro que deseas cancelar la actividad?',
@@ -701,14 +893,14 @@ function eliminarActividad(id) {
                     return;
                 }
                 Swal.fire({ icon: 'success', title: 'Cancelado', text: 'Cambios realizados.' }).then(function() {
-                    cargarPlanesAnuales();
+                    cargarListadoPlanes();
                 });
             }
         });
     });
 }
 
-function verDetallePlan(id) {
+function abrirDetallePlan(id) {
     if (!id) {
         Swal.fire({ icon: 'warning', title: 'Aviso', text: 'No se encontró el plan a consultar.' });
         return;
@@ -892,9 +1084,6 @@ function cargarPlanParaEditar(planId) {
                 const plan = response.data.plan;
                 const actividades = response.data.actividades;
                 
-                console.log('Plan cargado:', plan);
-                console.log('Actividades:', actividades);
-                
                 // Establecer ID del plan para edición
                 $('#plan_editar_id').val(planId);
                 
@@ -916,8 +1105,6 @@ function cargarPlanParaEditar(planId) {
                         actividadesPorSeccion[seccion].push(act);
                     });
                     
-                    console.log('Actividades por sección:', actividadesPorSeccion);
-                    
                     // Llenar cada sección
                     Object.keys(actividadesPorSeccion).forEach(nombreSeccion => {
                         const acts = actividadesPorSeccion[nombreSeccion];
@@ -929,18 +1116,10 @@ function cargarPlanParaEditar(planId) {
                             '7.2 Determinación de los Requisitos': '7.2',
                             '7.6 Control de Cambios': '7.6',
                             '7.7 Control de Salidas no Conformes': '7.7',
-                            '7.11 Control de Dispositivos de Seguimiento y Medición': '7.11',
-                            '8.8 Revisión por la Dirección': '8.8',
-                            'IV. Otras': 'iv',
-                            '6.2': '6.2',
-                            '6.3': '6.3',
-                            '6.4': '6.4',
-                            '7.2': '7.2',
-                            '7.6': '7.6',
-                            '7.7': '7.7',
-                            '7.11': '7.11',
-                            '8.8': '8.8',
-                            'IV': 'iv'
+                            '8.3 Control de Documentos del Sistema de Gestión': '8.3',
+                            '8.8 Auditorías Internas y Externas': '8.8',
+                            '8.9 Revisión por la dirección': '8.9',
+                            'IV. Otras': 'iv'
                         };
 
                         const resolverSeccionId = function(valor) {
@@ -958,89 +1137,51 @@ function cargarPlanParaEditar(planId) {
                         };
 
                         const seccionId = resolverSeccionId(nombreSeccion);
-                        console.log('Procesando sección:', nombreSeccion, '-> ID:', seccionId);
+                        //console.log('Procesando sección:', nombreSeccion, '-> ID:', seccionId);
                         
                         if (!seccionId) {
-                            console.warn('Sección no mapeada:', nombreSeccion);
+                            //console.warn('Sección no mapeada:', nombreSeccion);
                             return;
                         }
                         
-                        const $tbody = getPlanRowsTbody(seccionId);
+                        const $tbody = obtenerTbodySeccionPlan(seccionId);
                         if (!$tbody.length) {
-                            console.warn('No se encontró tbody para:', seccionId);
+                            //console.warn('No se encontró tbody para:', seccionId);
                             return;
                         }
                         
                         // Limpiar filas existentes
                         $tbody.empty();
                         
-                        console.log('Agregando', acts.length, 'actividades a sección', nombreSeccion);
-                        
                         // Agregar una fila por cada actividad
                         acts.forEach((act, index) => {
-                            $tbody.append(buildPlanRow(index, seccionId));
+                            const id_actividad = act.id;
+                            $tbody.append(crearFilaPlanHtml(index, seccionId, id_actividad));
                             const $row = $tbody.find('.plan-row').eq(index);
-                            
-                            console.log('Fila #' + index, 'Actividad:', act.actividad);
                             
                             // Llenar datos de la actividad
                             $row.find('input[name^="num_actividad"]').val(act.num_actividad || '');
                             $row.find('textarea[name^="actividad"]').val(act.actividad || '');
                             $row.find('textarea[name^="observaciones"]').val(act.observaciones || '');
                             
-                            // Marcar meses ANTES de inicializar Select2
                             if (act.meses && act.meses.length > 0) {
-                                console.log('Marcando meses:', act.meses);
                                 act.meses.forEach(mes => {
                                     $row.find('input[type="checkbox"][value="' + mes + '"]').prop('checked', true);
                                 });
                             }
-                            
-                            // Asignar valores a los selects ANTES de inicializar Select2
-                            const $responsable = $row.find('select.responsable-select');
-                            const $participantes = $row.find('select.participantes-select');
-                            
-                            // Llenar opciones del select
-                            $responsable.empty().append('<option value="">Selecciona...</option>');
-                            $participantes.empty();
-                            
-                            usuariosCache.forEach(function(usr) {
-                                $responsable.append('<option value="' + usr.id_usuario + '">' + usr.nombre + '</option>');
-                                $participantes.append('<option value="' + usr.id_usuario + '">' + usr.nombre + '</option>');
-                            });
-                            
-                            // Asignar valores ANTES de Select2
+
+                            poblarUsuariosEnFila($row);
+
                             if (act.responsable) {
-                                console.log('Asignando responsable PRE-Select2:', act.responsable);
-                                $responsable.val(act.responsable);
+                                $row.find('select.responsable-select').val(String(act.responsable)).trigger('change');
                             }
-                            
+
                             if (act.participantes && act.participantes.length > 0) {
-                                console.log('Asignando participantes PRE-Select2:', act.participantes);
-                                $participantes.val(act.participantes);
+                                let participantes = act.participantes.map(function(valor) {
+                                    return String(valor);
+                                });
+                                $row.find('select.participantes-select').val(participantes).trigger('change');
                             }
-                            
-                            // AHORA SÍ inicializar Select2 con los valores ya asignados
-                            if ($responsable.hasClass('select2-hidden-accessible')) {
-                                $responsable.select2('destroy');
-                            }
-                            if ($participantes.hasClass('select2-hidden-accessible')) {
-                                $participantes.select2('destroy');
-                            }
-                            
-                            $responsable.select2({
-                                placeholder: 'Selecciona responsable',
-                                width: '100%'
-                            });
-                            $participantes.select2({
-                                placeholder: 'Selecciona participantes',
-                                width: '100%'
-                            });
-                            
-                            console.log('Select2 inicializado con valores:', {
-                                responsable: $responsable.val(),
-                                participantes: $participantes.val()
-                            });
                         });
                     });
                 }

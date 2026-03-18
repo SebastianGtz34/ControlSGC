@@ -2,6 +2,7 @@
 include_once 'conn.php';
 
 $accion = isset($_POST['accion']) ? $_POST['accion'] : '';
+$guardarAvance = isset($_POST['guardar_avance']) ? ((int)$_POST['guardar_avance'] === 1) : false;
 
 // Capturar noEmpleado de las cookies
 $noEmpleado = isset($_COOKIE['noEmpleadoL']) ? trim($_COOKIE['noEmpleadoL']) : '';
@@ -29,6 +30,7 @@ $observacionesArr = isset($_POST['observaciones']) ? $_POST['observaciones'] : [
 $responsableArr = isset($_POST['responsable']) ? $_POST['responsable'] : [];
 $participantesArr = isset($_POST['participantes']) ? $_POST['participantes'] : [];
 $mesesArr = isset($_POST['meses']) ? $_POST['meses'] : [];
+$actividadIdArr = isset($_POST['actividad_id']) ? $_POST['actividad_id'] : [];
 
 // ====================================================
 // ACCIÓN: datos_formulario
@@ -48,7 +50,7 @@ if ($accion === 'datos_formulario') {
         }
     }
 
-    $resultAreas = $conn->query("SELECT id AS id_area, AREA AS nombre_area FROM mess_rrhh.areas ORDER BY AREA");
+    $resultAreas = $conn->query("SELECT id AS id_area, departamento AS nombre_area FROM mess_rrhh.departamento ORDER BY departamento");
     if ($resultAreas) {
         while ($row = $resultAreas->fetch_assoc()) {
             $areas[] = [
@@ -94,43 +96,14 @@ if ($accion === 'listar_planes') {
             SELECT
                 a.id_plan_anual,
                 COUNT(*) AS total_actividades,
-                SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) = 'APROBADO' THEN 1 ELSE 0 END) AS aprobadas,
-                SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) = 'NO APROBADO' THEN 1 ELSE 0 END) AS no_aprobadas,
-                SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) NOT IN ('APROBADO', 'NO APROBADO') THEN 1 ELSE 0 END) AS en_revision
+                SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) = 'CUMPLIO' THEN 1 ELSE 0 END) AS aprobadas,
+                SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) = 'NO CUMPLIO' THEN 1 ELSE 0 END) AS no_aprobadas,
+                SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) NOT IN ('CUMPLIO', 'NO CUMPLIO') THEN 1 ELSE 0 END) AS en_revision
             FROM actividades a
             GROUP BY a.id_plan_anual
         ) ac ON ac.id_plan_anual = pa.id
         ORDER BY pa.fecha_creacion DESC, pa.id DESC";
     $result = $conn->query($sql);
-
-    if ($result === false) {
-        $sqlFallback = "SELECT pa.*, 
-                CONCAT_WS(' - ', up.nombre, pp.puesto) AS presenta_text,
-                CONCAT_WS(' - ', ua.nombre, pa2.puesto) AS aprueba_text,
-                ur.nombre AS registra_text,
-                COALESCE(ac.total_actividades, 0) AS total_actividades,
-                COALESCE(ac.aprobadas, 0) AS actividades_aprobadas,
-                COALESCE(ac.no_aprobadas, 0) AS actividades_no_aprobadas,
-                COALESCE(ac.en_revision, 0) AS actividades_en_revision
-            FROM planes_anuales pa
-            LEFT JOIN mess_rrhh.usuarios up ON up.id_usuario = pa.id_presenta
-            LEFT JOIN mess_rrhh.usuarios ua ON ua.id_usuario = pa.id_aprueba
-            LEFT JOIN mess_rrhh.puesto pp ON pp.id = up.puesto
-            LEFT JOIN mess_rrhh.puesto pa2 ON pa2.id = ua.puesto
-            LEFT JOIN mess_rrhh.usuarios ur ON ur.noEmpleado = pa.id_registra
-            LEFT JOIN (
-                SELECT
-                    a.id_plan_anual,
-                    COUNT(*) AS total_actividades,
-                    SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) = 'APROBADO' THEN 1 ELSE 0 END) AS aprobadas,
-                    SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) = 'NO APROBADO' THEN 1 ELSE 0 END) AS no_aprobadas,
-                    SUM(CASE WHEN UPPER(TRIM(REPLACE(COALESCE(a.estatus_actividad, ''), '_', ' '))) NOT IN ('APROBADO', 'NO APROBADO') THEN 1 ELSE 0 END) AS en_revision
-                FROM actividades a
-                GROUP BY a.id_plan_anual
-            ) ac ON ac.id_plan_anual = pa.id
-            ORDER BY pa.fecha_creacion DESC, pa.id DESC";
-        $result = $conn->query($sqlFallback);
-    }
 
     $rows = [];
     if ($result) {
@@ -320,12 +293,23 @@ if ($accion === 'crear' || $accion === 'actualizar') {
     
     // Verificar si estamos editando un plan existente
     $planEditarId = isset($_POST['plan_editar_id']) ? (int)$_POST['plan_editar_id'] : 0;
+    if ($guardarAvance && $planEditarId <= 0) {
+        // En registro: guardar avance crea nuevo plan incompleto.
+        // En edicion: conservar planEditarId para actualizar el mismo plan.
+        $planEditarId = 0;
+    }
     
     if ($planEditarId > 0) {
         // ACTUALIZAR plan existente
-        $stmtUpdatePlan = $conn->prepare("UPDATE planes_anuales 
-            SET titulo_objetivos = ?, id_presenta = ?, id_aprueba = ?, id_area = ?, fecha_actualizacion = NOW()
-            WHERE id = ?");
+        if ($guardarAvance) {
+            $stmtUpdatePlan = $conn->prepare("UPDATE planes_anuales 
+                SET titulo_objetivos = ?, id_presenta = ?, id_aprueba = ?, id_area = ?, estatus = 'INCOMPLETO', fecha_actualizacion = NOW()
+                WHERE id = ?");
+        } else {
+            $stmtUpdatePlan = $conn->prepare("UPDATE planes_anuales 
+                SET titulo_objetivos = ?, id_presenta = ?, id_aprueba = ?, id_area = ?, estatus = 'EN REVISION', fecha_actualizacion = NOW()
+                WHERE id = ?");
+        }
         $stmtUpdatePlan->bind_param('siiii', $objetivosCalidad, $usuarioPresenta, $usuarioAprueba, $idArea, $planEditarId);
         $okUpdate = $stmtUpdatePlan->execute();
         $stmtUpdatePlan->close();
@@ -341,20 +325,21 @@ if ($accion === 'crear' || $accion === 'actualizar') {
         
         $idPlanAnual = $planEditarId;
         
-        // Obtener actividades existentes del plan para actualizar
+        // Obtener actividades existentes del plan para actualizar/borrar por ID real.
         $actividadesExistentes = [];
         $stmtGetAct = $conn->prepare("SELECT id, seccion FROM actividades WHERE id_plan_anual = ? ORDER BY seccion, id");
         $stmtGetAct->bind_param('i', $idPlanAnual);
         $stmtGetAct->execute();
         $resGetAct = $stmtGetAct->get_result();
         while ($rowAct = $resGetAct->fetch_assoc()) {
-            $actividadesExistentes[$rowAct['seccion']][] = $rowAct['id'];
+            $idActExistente = (int)$rowAct['id'];
+            $actividadesExistentes[$idActExistente] = true;
         }
         $stmtGetAct->close();
         
     } else {
         // INSERTAR un nuevo registro en planes_anuales con los datos del formulario
-        $estatusPlan = 'EN REVISIÓN';
+        $estatusPlan = $guardarAvance ? 'INCOMPLETO' : 'EN REVISION';
         $stmtInsertPlan = $conn->prepare("INSERT INTO planes_anuales (anio, titulo_objetivos, id_presenta, id_aprueba, id_registra, id_area, estatus)
             VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmtInsertPlan->bind_param('isiiiis', $anioActual, $objetivosCalidad, $usuarioPresenta, $usuarioAprueba, $noEmpleado, $idArea, $estatusPlan);
@@ -392,10 +377,13 @@ if ($accion === 'crear' || $accion === 'actualizar') {
             '7.2' => '7.2 Determinación de los Requisitos',
             '7.6' => '7.6 Control de Cambios',
             '7.7' => '7.7 Control de Salidas no Conformes',
-            '7.11' => '7.11 Control de Dispositivos de Seguimiento y Medición',
-            '8.8' => '8.8 Revisión por la Dirección',
+            '8.3' => '8.3 Control de Documentos del Sistema de Gestión',
+            '8.8' => '8.8 Auditorías Internas y Externas',
+            '8.9' => '8.9 Revisión por la dirección',
             'iv' => 'IV. Otras'
         ];
+
+        $actividadesProcesadas = [];
 
         foreach ($secciones as $seccionKeyRaw) {
             // PHP convierte los puntos en guiones bajos dentro de los nombres
@@ -410,6 +398,7 @@ if ($accion === 'crear' || $accion === 'actualizar') {
             $respArrSeccion = $responsableArr[$seccionKeyRaw] ?? [];
             $partArrSeccion = $participantesArr[$seccionKeyRaw] ?? [];
             $mesArrSeccion = $mesesArr[$seccionKeyRaw] ?? [];
+            $idArrSeccion = $actividadIdArr[$seccionKeyRaw] ?? [];
 
             if (!is_array($numArrSeccion)) $numArrSeccion = [$numArrSeccion];
             if (!is_array($actArrSeccion)) $actArrSeccion = [$actArrSeccion];
@@ -417,6 +406,7 @@ if ($accion === 'crear' || $accion === 'actualizar') {
             if (!is_array($respArrSeccion)) $respArrSeccion = [$respArrSeccion];
             if (!is_array($partArrSeccion)) $partArrSeccion = [$partArrSeccion];
             if (!is_array($mesArrSeccion)) $mesArrSeccion = [$mesArrSeccion];
+            if (!is_array($idArrSeccion)) $idArrSeccion = [$idArrSeccion];
 
             $totalRows = count($numArrSeccion);
 
@@ -427,26 +417,62 @@ if ($accion === 'crear' || $accion === 'actualizar') {
                 $responsable = trim($respArrSeccion[$i] ?? '');
                 $participantes = is_array($partArrSeccion[$i] ?? null) ? $partArrSeccion[$i] : [];
                 $meses = is_array($mesArrSeccion[$i] ?? null) ? $mesArrSeccion[$i] : [];
+                $idActividadPost = (int)($idArrSeccion[$i] ?? 0);
 
                 $filaVacia = ($actividad === '' && $responsable === ''
                     && empty($participantes) && empty($meses));
+                $filaCompleta = ($numActividad !== '' && $actividad !== '' && $responsable !== '' && !empty($meses));
 
                 if ($filaVacia) {
                     continue;
                 }
 
-                if ($numActividad === '' || $actividad === '' || $responsable === '') {
+                if (!$filaCompleta) {
+                    $camposFaltantes = [];
+                    if (empty($actividad)) {
+                        $camposFaltantes[] = 'Actividad';
+                    }
+                    if (empty($responsable)) {
+                        $camposFaltantes[] = 'Responsable';
+                    }
+                    if (empty($participantes)) {
+                        $camposFaltantes[] = 'Participantes';
+                    }
+                    if (empty($meses)) {
+                        $camposFaltantes[] = 'Mes';
+                    }
+                    if (empty($observaciones)) {
+                        $camposFaltantes[] = 'Observaciones';
+                    }
+
+                    $identificadorFila = $numActividad !== '' ? $numActividad : ('fila ' . ($i + 1));
+                    $detalleError = 'Actividad incompleta en ' . $seccionNombre . ' (' . $identificadorFila . '). Falta: ' . implode(', ', $camposFaltantes) . '.';
+
                     $conn->rollback();
                     header('Content-Type: application/json');
-                    echo json_encode(['success' => false]);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => $detalleError
+                    ]);
                     exit;
                 }
 
                 // Verificar si estamos actualizando actividades existentes
                 $idActividad = null;
-                if ($planEditarId > 0 && isset($actividadesExistentes[$seccionNombre][$i])) {
-                    // ACTUALIZAR actividad existente
-                    $idActividad = $actividadesExistentes[$seccionNombre][$i];
+                if ($planEditarId > 0 && $idActividadPost > 0) {
+                    // ACTUALIZAR actividad existente por ID enviado por frontend.
+                    if (!isset($actividadesExistentes[$idActividadPost])) {
+                        $conn->rollback();
+                        header('Content-Type: application/json');
+                        echo json_encode([
+                            'success' => false,
+                            'error' => 'La actividad seleccionada no pertenece al plan en edición.'
+                        ]);
+                        exit;
+                    }
+
+                    $idActividad = $idActividadPost;
+                    $actividadesProcesadas[$idActividad] = true;
                     
                     $stmt = $conn->prepare("UPDATE actividades 
                         SET num_actividad = ?, actividad = ?, periodo_registro = ?, observaciones = ?
@@ -495,6 +521,8 @@ if ($accion === 'crear' || $accion === 'actualizar') {
                         ]);
                         exit;
                     }
+
+                    $actividadesProcesadas[$idActividad] = true;
                 }
 
                 $stmtResp = $conn->prepare("INSERT INTO involucrados (id_actividad, tipo_involucrado, id_usuario)
@@ -542,12 +570,40 @@ if ($accion === 'crear' || $accion === 'actualizar') {
             }
         }
 
+        if ($planEditarId > 0) {
+            $idsParaEliminar = array_diff(array_keys($actividadesExistentes), array_keys($actividadesProcesadas));
+            if (!empty($idsParaEliminar)) {
+                $stmtDelInv = $conn->prepare("DELETE FROM involucrados WHERE id_actividad = ?");
+                $stmtDelMes = $conn->prepare("DELETE FROM actividad_meses WHERE id_actividad = ?");
+                $stmtDelAct = $conn->prepare("DELETE FROM actividades WHERE id = ? AND id_plan_anual = ?");
+
+                foreach ($idsParaEliminar as $idEliminar) {
+                    $idEliminar = (int)$idEliminar;
+
+                    $stmtDelInv->bind_param('i', $idEliminar);
+                    $stmtDelInv->execute();
+
+                    $stmtDelMes->bind_param('i', $idEliminar);
+                    $stmtDelMes->execute();
+
+                    $stmtDelAct->bind_param('ii', $idEliminar, $idPlanAnual);
+                    $stmtDelAct->execute();
+                }
+
+                $stmtDelInv->close();
+                $stmtDelMes->close();
+                $stmtDelAct->close();
+            }
+        }
+
         if ($totalInserted === 0) {
             $conn->rollback();
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
-                'error' => 'No se detectaron actividades válidas para guardar en el plan.'
+                'error' => $guardarAvance
+                    ? 'Para guardar avance debes capturar al menos un renglon completo (actividad, responsable, participante, observaciones y al menos un mes).'
+                    : 'No se detectaron actividades válidas para guardar en el plan.'
             ]);
             exit;
         }

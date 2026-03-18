@@ -32,18 +32,30 @@
                                 <div class="card-body">
                                     <div class="table-responsive">
                                         <table class="table table-hover align-middle" id="tablaActividades" width="100%" cellspacing="0">
-                                            <thead class="bg-secondary border-bottom">
-                                                <tr>
+                                            <thead>
+                                                <tr class="bg-secondary border-bottom">
                                                     <th class="text-white fw-semibold small">Objetivos</th>
-                                                    <th class="text-white fw-semibold small">Presenta</th>
+                                                    <th class="text-white fw-semibold small">Elaboró</th>
                                                     <th class="text-white fw-semibold small">Aprueba</th>
-                                                    <th class="text-white fw-semibold small">Registra</th>
+                                                    <th class="text-white fw-semibold small">Registro</th>
                                                     <th class="text-white fw-semibold small">Área</th>
                                                     <th class="text-white fw-semibold small">Actividades</th>
                                                     <th class="text-white fw-semibold small">Estatus</th>
                                                     <th class="text-white fw-semibold small">Fecha registro</th>
                                                     <th class="text-white fw-semibold small">Fecha actualización</th>
                                                     <th class="text-white fw-semibold small text-center">Acciones</th>
+                                                </tr>
+                                                <tr class="bg-light border-bottom">
+                                                    <th></th>
+                                                    <th><select id="filtroElabora" class="form-select form-select-sm py-0 lh-sm"><option value="">Todos</option></select></th>
+                                                    <th></th>
+                                                    <th></th>
+                                                    <th><select id="filtroArea" class="form-select form-select-sm py-0 lh-sm"><option value="">Todas</option></select></th>
+                                                    <th></th>
+                                                    <th><select id="filtroEstatus" class="form-select form-select-sm py-0 lh-sm"><option value="">Todos</option></select></th>
+                                                    <th></th>
+                                                    <th></th>
+                                                    <th></th>
                                                 </tr>
                                             </thead>
                                             <tbody></tbody>
@@ -77,6 +89,6 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js" defer="defer"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/actividades_sgc.js?v=20260306"></script>
+    <script src="js/actividades_sgc.js?v=20260317_2"></script>
 </body>
 </html>
