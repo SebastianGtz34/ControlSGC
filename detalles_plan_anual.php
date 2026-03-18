@@ -32,6 +32,7 @@
                     <div class="container my-auto">
                         <!-- Contenedor donde se renderiza el detalle del plan -->
                         <input type="hidden" id="id-usr-aprobo-hidden" value="<?php echo htmlspecialchars($_COOKIE['id_usuarioL'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" id="no-empleado-hidden" value="<?php echo htmlspecialchars($_COOKIE['noEmpleado'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                         <div id="detalle-plan-root"></div>
                     </div>
                 </div>
@@ -61,11 +62,12 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalAprobacionActividadLabel">Actualizar estatus de actividad</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
+                    <input type="hidden" id="modal-id-actividad" value="">
                     <input type="hidden" id="modal-num-actividad" value="">
                     <input type="hidden" id="modal-estatus-actividad" value="">
+                    <input type="hidden" id="modal-realizado" value="">
                     <div class="mb-2">
                         <small class="text-muted" id="modal-etiqueta-actividad"></small>
                     </div>
@@ -74,6 +76,23 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-primary btn-sm" id="btn-guardar-aprobacion">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalConfirmarRealizado" tabindex="-1" aria-labelledby="modalConfirmarRealizadoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalConfirmarRealizadoLabel">Confirmar realizado</h5>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="modal-confirmar-id-actividad" value="">
+                    <p class="mb-0" id="modal-confirmar-texto">¿Deseas marcar esta actividad como REALIZADO?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="btn-confirmar-realizado">Confirmar</button>
                 </div>
             </div>
         </div>
@@ -91,14 +110,23 @@
         const root = document.getElementById('detalle-plan-root');
         const idPlan = <?php echo (int)$idPlan; ?>;
         const idUsrAprobo = (document.getElementById('id-usr-aprobo-hidden') || {}).value || '';
+        const noEmpleado = (document.getElementById('no-empleado-hidden') || {}).value || '';
+        let puedeVerCumplio = false;
         const modalEl = document.getElementById('modalAprobacionActividad');
         const modalAprobacion = modalEl ? new bootstrap.Modal(modalEl) : null;
+        const modalConfirmarEl = document.getElementById('modalConfirmarRealizado');
+        const modalConfirmarRealizado = modalConfirmarEl ? new bootstrap.Modal(modalConfirmarEl) : null;
+        const modalIdActividad = document.getElementById('modal-id-actividad');
         const modalNumActividad = document.getElementById('modal-num-actividad');
         const modalEstatusActividad = document.getElementById('modal-estatus-actividad');
         const modalObservacion = document.getElementById('modal-observacion-actividad');
         const modalEtiquetaActividad = document.getElementById('modal-etiqueta-actividad');
+        const modalConfirmarIdActividad = document.getElementById('modal-confirmar-id-actividad');
+        const modalConfirmarTexto = document.getElementById('modal-confirmar-texto');
         const btnGuardarAprobacion = document.getElementById('btn-guardar-aprobacion');
+        const btnConfirmarRealizado = document.getElementById('btn-confirmar-realizado');
         let ultimoBotonAccion = null;
+        let ultimoBotonRealizado = null;
 
         if (modalEl) {
             modalEl.addEventListener('hidden.bs.modal', function() {
@@ -125,18 +153,45 @@
         }
 
         function renderEstatusActividadBadge(estatusRaw) {
-            const estatus = String(estatusRaw || 'EN REVISION').trim().toUpperCase();
-            const etiqueta = estatus.replace(/_/g, ' ');
+            const estatus = String(estatusRaw || '').trim().toUpperCase();
+            const estatusNormalizado = estatus.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const etiqueta = (estatus === '' ? 'EN REVISION' : estatus.replace(/_/g, ' '));
 
-            if (estatus === 'APROBADO') {
+            if (estatusNormalizado === 'CUMPLIO') {
                 return '<span class="badge bg bg-success">' + escapeHtml(etiqueta) + '</span>';
             }
 
-            if (estatus === 'NO APROBADO') {
-                return '<span class="badge bg bg-danger">' + escapeHtml(etiqueta) + '</span>';
+            if (estatusNormalizado === 'NO CUMPLIO') {
+                return '<span class="badge bg bg-danger text-white">' + escapeHtml(etiqueta) + '</span>';
             }
 
-            return '<span class="badge bg bg-warning">' + escapeHtml(etiqueta) + '</span>';
+            if (estatusNormalizado === 'CANCELADO') {
+                return '<span class="badge bg bg-dark text-white">' + escapeHtml(etiqueta) + '</span>';
+            }
+
+            if (estatusNormalizado === 'EN REVISION' || estatus === '') {
+                return '<span class="badge bg bg-info text-dark">' + escapeHtml(etiqueta) + '</span>';
+            }
+
+            // INCOMPLETO u otro valor desconocido.
+            return '<span class="badge bg bg-warning text-dark">' + escapeHtml(etiqueta) + '</span>';
+        }
+
+        function renderRealizadoBadge(realizadoRaw) {
+            const realizado = String(realizadoRaw || '').trim().toUpperCase();
+            if (realizado === 'REALIZADO') {
+                return '<span class="badge bg bg-success">REALIZADO</span>';
+            }
+
+            if (realizado === 'NO REALIZADO') {
+                return '<span class="badge bg bg-danger text-white">NO REALIZADO</span>';
+            }
+
+            if (realizado === 'PENDIENTE') {
+                return '<span class="badge bg bg-secondary">PENDIENTE</span>';
+            }
+
+            return '<span class="badge bg bg-warning">' + escapeHtml(realizado.replace(/_/g, ' ')) + '</span>';
         }
 
         // Renderiza errores de carga/validacion en el contenedor principal.
@@ -144,15 +199,16 @@
             root.innerHTML = '<div class="alert alert-danger">' + escapeHtml(message || 'Ocurrio un error al cargar el detalle.') + '</div>';
         }
 
-        function abrirModalAprobacion(numActividad, estatusActividad, botonOrigen) {
+        function abrirModalEstatusActividad(idActividad, numActividad, estatusActividad, botonOrigen) {
             if (!modalAprobacion) {
                 alert('No se pudo abrir el modal.');
                 return;
             }
 
             const estatus = String(estatusActividad || '').toUpperCase();
-            const etiqueta = estatus === 'APROBADO' ? 'Aprobar' : 'No aprobar';
+            const etiqueta = estatus === 'CUMPLIO' ? 'CUMPLIO' : 'NO CUMPLIO';
 
+            modalIdActividad.value = String(idActividad || '');
             modalNumActividad.value = String(numActividad || '');
             modalEstatusActividad.value = estatus;
             modalObservacion.value = '';
@@ -165,24 +221,16 @@
         }
 
         function guardarAprobacionActividad() {
-            const numActividad = (modalNumActividad.value || '').trim();
+            const idActividad = (modalIdActividad.value || '').trim();
             const estatusActividad = (modalEstatusActividad.value || '').trim();
             const observacion = (modalObservacion.value || '').trim();
 
-            if (!numActividad) {
-                alert('No se encontro el numero de actividad.');
-                return;
-            }
-            if (estatusActividad !== 'APROBADO' && estatusActividad !== 'NO APROBADO') {
-                alert('Estatus invalido.');
+            if (!idActividad) {
+                alert('No se encontro la actividad.');
                 return;
             }
             if (!observacion) {
                 alert('La observacion es obligatoria.');
-                return;
-            }
-            if (!idUsrAprobo) {
-                alert('No existe id_usuarioL en cookies para registrar aprobacion.');
                 return;
             }
 
@@ -193,12 +241,10 @@
                 method: 'POST',
                 dataType: 'json',
                 data: {
-                    accion: 'guardar_estatus_actividad',
-                    id_plan_anual: idPlan,
-                    num_actividad: numActividad,
-                    estatus_actividad: estatusActividad,
-                    observacion: observacion,
-                    id_usr_aprobo: idUsrAprobo
+                    accion: 'guardar_realizado',
+                    id_actividad: idActividad,
+                    realizado: estatusActividad,
+                    observacion: observacion
                 },
                 success: function(resp) {
                     btnGuardarAprobacion.disabled = false;
@@ -207,22 +253,10 @@
                         return;
                     }
 
-                    const selector = 'button[data-num-actividad="' + numActividad.replace(/"/g, '\\"') + '"]';
-                    const botonesActividad = root.querySelectorAll(selector);
-                    botonesActividad.forEach(function(btn) {
-                        if (btn.getAttribute('data-estatus-actividad') === estatusActividad) {
-                            btn.classList.remove('btn-outline-success', 'btn-outline-danger');
-                            btn.classList.add(estatusActividad === 'APROBADO' ? 'btn-success' : 'btn-danger');
-                        } else {
-                            btn.classList.remove('btn-success', 'btn-danger');
-                            btn.classList.add(btn.getAttribute('data-estatus-actividad') === 'APROBADO' ? 'btn-outline-success' : 'btn-outline-danger');
-                        }
-                    });
-
-                    const badgesActividad = root.querySelectorAll('span.js-estatus-actividad[data-num-actividad="' + numActividad.replace(/"/g, '\\"') + '"]');
-                    badgesActividad.forEach(function(badge) {
-                        badge.innerHTML = renderEstatusActividadBadge(estatusActividad);
-                    });
+                    const badge = root.querySelector('span.js-estatus-actividad[data-id-actividad="' + String(idActividad).replace(/"/g, '\\"') + '"]');
+                    if (badge) {
+                        badge.innerHTML = renderEstatusActividadBadge(resp.estatus_actividad || estatusActividad);
+                    }
 
                     if (modalEl && modalEl.contains(document.activeElement) && typeof document.activeElement.blur === 'function') {
                         document.activeElement.blur();
@@ -232,6 +266,57 @@
                 error: function() {
                     btnGuardarAprobacion.disabled = false;
                     alert('Error de comunicacion al guardar el estatus de la actividad.');
+                }
+            });
+        }
+
+        function abrirModalConfirmarRealizado(idActividad, numActividad, botonOrigen) {
+            if (!modalConfirmarRealizado) {
+                alert('No se pudo abrir el modal de confirmacion.');
+                return;
+            }
+
+            modalConfirmarIdActividad.value = String(idActividad || '');
+            modalConfirmarTexto.textContent = '¿Deseas marcar la actividad ' + String(numActividad || 'S/R') + ' como REALIZADO?';
+            ultimoBotonRealizado = botonOrigen || null;
+            modalConfirmarRealizado.show();
+        }
+
+        function guardarRealizadoActividad(idActividad, botonOrigen) {
+            if (!idActividad) {
+                alert('No se encontro la actividad.');
+                return;
+            }
+
+            botonOrigen.disabled = true;
+
+            $.ajax({
+                url: 'acciones_detalles_plan.php',
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    accion: 'guardar_estatus_cumplio',
+                    id_actividad: idActividad
+                },
+                success: function(resp) {
+                    botonOrigen.disabled = false;
+                    if (!resp || !resp.success) {
+                        alert(resp && resp.error ? resp.error : 'No se pudo guardar el realizado.');
+                        return;
+                    }
+
+                    const badge = root.querySelector('span.js-realizado-actividad[data-id-actividad="' + String(idActividad).replace(/"/g, '\\"') + '"]');
+                    if (badge) {
+                        badge.innerHTML = renderRealizadoBadge(resp.realizado || 'REALIZADO');
+                    }
+
+                    if (modalConfirmarRealizado) {
+                        modalConfirmarRealizado.hide();
+                    }
+                },
+                error: function() {
+                    botonOrigen.disabled = false;
+                    alert('Error de comunicacion al guardar el realizado de la actividad.');
                 }
             });
         }
@@ -291,7 +376,7 @@
             html += '  <div class="col-md-6"><span class="fw-semibold">Presenta:</span> ' + escapeHtml(plan.presenta_text || 'S/R') + '</div>';
             html += '  <div class="col-md-6"><span class="fw-semibold">Aprueba:</span> ' + escapeHtml(plan.aprueba_text || 'S/R') + '</div>';
             html += '  <div class="col-md-6"><span class="fw-semibold">Registra:</span> ' + escapeHtml(plan.registra_text || plan.id_registra || 'S/R') + '</div>';
-            html += '  <div class="col-md-6"><span class="fw-semibold">Estatus:</span> ' + escapeHtml(plan.estatus || 'S/R') + '</div>';
+            html += '  <div class="col-md-6"><span class="fw-semibold">Estatus Rev:</span> ' + escapeHtml(plan.estatus || 'S/R') + '</div>';
             html += '</div>';
 
             html += '<h6 class="bg-primary border border-dark text-white py-2 px-3 mt-3 mb-0">Objetivo de calidad</h6>';
@@ -319,7 +404,8 @@
                 html += '        <th rowspan="2">Responsable</th>';
                 html += '        <th rowspan="2">Participantes</th>';
                 html += '        <th rowspan="2">Observaciones sobre el cumplimiento</th>';
-                html += '        <th rowspan="2">Estatus</th>';
+                html += '        <th rowspan="2">Realizado</th>';
+                html += '        <th rowspan="2">Estatus Rev</th>';
                 html += '        <th rowspan="2">Acciones</th>';
                 html += '      </tr>';
                 html += '      <tr>';
@@ -339,10 +425,17 @@
                     html += '  <td>' + escapeHtml(item.responsable || 'S/R') + '</td>';
                     html += '  <td>' + escapeHtml(item.participantes || 'S/R') + '</td>';
                     html += '  <td>' + nl2brSafe(item.observaciones || '') + '</td>';
-                    html += '  <td class="text-center"><span class="js-estatus-actividad" data-num-actividad="' + escapeHtml(item.num_actividad || '') + '">' + renderEstatusActividadBadge(item.estatus_actividad || 'EN REVISION') + '</span></td>';
+                    html += '  <td class="text-center"><span class="js-realizado-actividad" data-id-actividad="' + escapeHtml(String(item.id || '')) + '">' + renderRealizadoBadge(item.realizado || '') + '</span></td>';
+                    html += '  <td class="text-center"><span class="js-estatus-actividad" data-id-actividad="' + escapeHtml(String(item.id || '')) + '" data-num-actividad="' + escapeHtml(item.num_actividad || '') + '">' + renderEstatusActividadBadge(item.estatus_actividad) + '</span></td>';
                     html += '  <td class="text-center text-nowrap">';
-                    html += '    <button type="button" class="btn btn-outline-success btn-sm me-1 js-accion-actividad" data-num-actividad="' + escapeHtml(item.num_actividad || '') + '" data-estatus-actividad="APROBADO" title="Aprobar"><i class="fas fa-check"></i></button>';
-                    html += '    <button type="button" class="btn btn-outline-danger btn-sm js-accion-actividad" data-num-actividad="' + escapeHtml(item.num_actividad || '') + '" data-estatus-actividad="NO APROBADO" title="No aprobar"><i class="fas fa-times"></i></button>';
+                    if (puedeVerCumplio) {
+                        html += '    <button type="button" class="btn btn-outline-success btn-sm me-1 js-accion-estatus-modal" data-id-actividad="' + escapeHtml(String(item.id || '')) + '" data-num-actividad="' + escapeHtml(item.num_actividad || '') + '" data-estatus-actividad="CUMPLIO" title="Cumplio"><i class="fas fa-check"></i></button>';
+                        html += '    <button type="button" class="btn btn-outline-danger btn-sm me-1 js-accion-estatus-modal" data-id-actividad="' + escapeHtml(String(item.id || '')) + '" data-num-actividad="' + escapeHtml(item.num_actividad || '') + '" data-estatus-actividad="NO CUMPLIO" title="No cumplio"><i class="fas fa-times"></i></button>';
+                    }
+                    if ($("#no-empleado-hidden").val() == item.id_responsable) {
+                        html += '<button type="button" class="btn btn-outline-primary btn-sm js-accion-realizado-confirm" data-id-actividad="' + escapeHtml(String(item.id || '')) + '" data-num-actividad="' + escapeHtml(item.num_actividad || '') + '" title="Realizado"><i class="fas fa-check-double"></i></button>';
+
+                    }
                     html += '  </td>';
                     html += '</tr>';
                 });
@@ -359,19 +452,34 @@
             root.innerHTML = html;
         }
 
-        root.addEventListener('click', function(event) {
-            const button = event.target.closest('.js-accion-actividad');
-            if (!button) {
+        root.onclick = function(event) {
+            const botonEstatus = event.target.closest('.js-accion-estatus-modal');
+            if (botonEstatus) {
+                const idActividad = botonEstatus.getAttribute('data-id-actividad') || '';
+                const numActividad = botonEstatus.getAttribute('data-num-actividad') || '';
+                const estatusActividad = botonEstatus.getAttribute('data-estatus-actividad') || '';
+                abrirModalEstatusActividad(idActividad, numActividad, estatusActividad, botonEstatus);
                 return;
             }
 
-            const numActividad = button.getAttribute('data-num-actividad') || '';
-            const estatusActividad = button.getAttribute('data-estatus-actividad') || '';
-            abrirModalAprobacion(numActividad, estatusActividad, button);
-        });
+            const botonRealizado = event.target.closest('.js-accion-realizado-confirm');
+            if (botonRealizado) {
+                const idActividad = botonRealizado.getAttribute('data-id-actividad') || '';
+                const numActividad = botonRealizado.getAttribute('data-num-actividad') || '';
+                abrirModalConfirmarRealizado(idActividad, numActividad, botonRealizado);
+                return;
+            }
+        };
 
         if (btnGuardarAprobacion) {
-            btnGuardarAprobacion.addEventListener('click', guardarAprobacionActividad);
+            btnGuardarAprobacion.onclick = guardarAprobacionActividad;
+        }
+
+        if (btnConfirmarRealizado) {
+            btnConfirmarRealizado.onclick = function() {
+                const idActividad = (modalConfirmarIdActividad.value || '').trim();
+                guardarRealizadoActividad(idActividad, ultimoBotonRealizado || btnConfirmarRealizado);
+            };
         }
 
         // Valida parametro minimo antes de consultar backend.
@@ -380,26 +488,44 @@
             return;
         }
 
-        // Carga el detalle desde el endpoint desacoplado.
-        $.ajax({
+        // Carga el detalle y verifica permisos en paralelo.
+        const peticionPlan = $.ajax({
             url: 'acciones_detalles_plan.php',
             method: 'POST',
             dataType: 'json',
+            data: { accion: 'detalle_plan', id: idPlan }
+        });
+
+        const peticionPermiso = $.ajax({
+            url: '../loginMaster/acciones_globales.php',
+            method: 'POST',
+            dataType: 'json',
             data: {
-                accion: 'detalle_plan',
-                id: idPlan
-            },
-            success: function(resp) {
-                if (!resp || !resp.success) {
-                    renderError(resp && resp.error ? resp.error : 'No se pudo cargar el plan.');
-                    return;
-                }
-                renderDetalle(resp.data || {});
-            },
-            error: function() {
-                renderError('Error de comunicacion con el servidor.');
+                accion: 'ValidarPermisos',
+                noEmpleado: noEmpleado,
+                sistema: 'controlSGC',
+                opcion: 'verCumplioActividad' // Permiso necesario para mostrar botones de marcar cumplio/no cumplio.
             }
         });
+
+        $.when(peticionPlan, peticionPermiso)
+            .done(function(resPlan, resPermiso) {
+                const respPlan = resPlan[0];
+                const respPermiso = resPermiso[0];
+
+                if (respPermiso && respPermiso.status === 'success' && respPermiso.data && respPermiso.data[0]) {
+                    puedeVerCumplio = Number(respPermiso.data[0].cuantos || 0) > 0;
+                }
+
+                if (!respPlan || !respPlan.success) {
+                    renderError(respPlan && respPlan.error ? respPlan.error : 'No se pudo cargar el plan.');
+                    return;
+                }
+                renderDetalle(respPlan.data || {});
+            })
+            .fail(function() {
+                renderError('Error de comunicacion con el servidor.');
+            });
     })();
     </script>
 </body>

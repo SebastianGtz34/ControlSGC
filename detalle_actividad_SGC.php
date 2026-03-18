@@ -136,6 +136,6 @@
     <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
     <script src="js/sb-admin-2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/actividades_sgc.js?v=20260306"></script>
+    <script src="js/actividades_sgc.js"></script>
 </body>
 </html>

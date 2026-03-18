@@ -28,7 +28,7 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="js/actividades_sgc.js?v=20260306"></script>
+    <script src="js/actividades_sgc.js?v=20260317_2"></script>
     <script>
     (function() {
         const root = document.getElementById('detalle-plan-root');
@@ -59,7 +59,7 @@
             const ordenSecciones = data.orden_secciones || [];
             const seccionesTitulos = data.secciones_titulos || {};
             const folio = data.folio || 'S/R';
-            const fechaRegistro = formatearFechaRegistro(plan.fecha_creacion);
+            const fechaRegistro = formatearFechaDdMmYyyy(plan.fecha_creacion);
 
             let html = '';
             html += '<div class="border-bottom border-2 border-dark pb-2 mb-3">';

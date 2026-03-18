@@ -59,6 +59,7 @@
                                                                         <th rowspan="2">Responsable</th>
                                                                         <th rowspan="2">Participantes</th>
                                                                         <th rowspan="2">Observaciones sobre el cumplimiento</th>
+                                                                        <th rowspan="2"></th>
                                                                     </tr>
                                                                     <tr>
                                                                         <th class="text-center">E</th>
@@ -81,7 +82,7 @@
                                                                             <input type="text" class="form-control form-control-sm" name="num_actividad[6.2][0]" value="6.2.1" readonly>
                                                                         </td>
                                                                         <td>
-                                                                            <textarea class="form-control form-control-sm" name="actividad[6.2][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                                            <textarea class="form-control form-control-sm" name="actividad[6.2][0]" rows="3"></textarea>
                                                                         </td>
                                                                         <td class="text-center"><input type="checkbox" name="meses[6.2][0][]" value="1"></td>
                                                                         <td class="text-center"><input type="checkbox" name="meses[6.2][0][]" value="2"></td>
@@ -104,15 +105,14 @@
                                                                             <select class="form-select form-select-sm participantes-select" name="participantes[6.2][0][]" multiple></select>
                                                                         </td>
                                                                         <td>
-                                                                            <textarea class="form-control form-control-sm" name="observaciones[6.2][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                                            <textarea class="form-control form-control-sm" name="observaciones[6.2][0]" rows="3"></textarea>
                                                                         </td>
-                                                                    </tr>
+                                                                    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFilaPlan(this)" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td></tr>
                                                                 </tbody>
                                                             </table>
                                                         </div>            
                                                         <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
-                                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaPlan('6.2')">Agregar fila</button>
-                                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaPlan('6.2')">Quitar fila</button>
+                                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaSeccionPlan('6.2')">Agregar fila</button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -137,6 +137,7 @@
                                                         <th rowspan="2">Responsable</th>
                                                         <th rowspan="2">Participantes</th>
                                                         <th rowspan="2">Observaciones sobre el cumplimiento</th>
+                                                        <th rowspan="2"></th>
                                                     </tr>
                                                     <tr>
                                                         <th class="text-center">E</th>
@@ -159,7 +160,7 @@
                                                             <input type="text" class="form-control form-control-sm" name="num_actividad[6.3][0]" value="6.3.1" readonly>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="actividad[6.3][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="actividad[6.3][0]" rows="3"></textarea>
                                                         </td>
                                                         <td class="text-center"><input type="checkbox" name="meses[6.3][0][]" value="1"></td>
                                                         <td class="text-center"><input type="checkbox" name="meses[6.3][0][]" value="2"></td>
@@ -182,21 +183,22 @@
                                                             <select class="form-select form-select-sm participantes-select" name="participantes[6.3][0][]" multiple></select>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="observaciones[6.3][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="observaciones[6.3][0]" rows="3"></textarea>
                                                         </td>
-                                                    </tr>
+                                                    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFilaPlan(this)" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td></tr>
                                                 </tbody>
                                             </table>
                                         </div>
 
                                             <!-- Botones agregar/quitar fila para sección 6.3 -->
                                             <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
-                                                <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaPlan('6.3')">Agregar fila</button>
-                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaPlan('6.3')">Quitar fila</button>
+                                                <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaSeccionPlan('6.3')">Agregar fila</button>
                                             </div>
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- SECCIÓN 6.4 Equipamiento -->
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
                                     <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse6-4" aria-expanded="false" aria-controls="collapse6-4">
@@ -215,6 +217,7 @@
                                                         <th rowspan="2">Responsable</th>
                                                         <th rowspan="2">Participantes</th>
                                                         <th rowspan="2">Observaciones sobre el cumplimiento</th>
+                                                        <th rowspan="2"></th>
                                                     </tr>
                                                     <tr>
                                                         <th class="text-center">E</th>
@@ -237,7 +240,7 @@
                                                             <input type="text" class="form-control form-control-sm" name="num_actividad[6.4][0]" value="6.4.1" readonly>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="actividad[6.4][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="actividad[6.4][0]" rows="3"></textarea>
                                                         </td>
                                                         <td class="text-center"><input type="checkbox" name="meses[6.4][0][]" value="1"></td>
                                                         <td class="text-center"><input type="checkbox" name="meses[6.4][0][]" value="2"></td>
@@ -260,15 +263,14 @@
                                                             <select class="form-select form-select-sm participantes-select" name="participantes[6.4][0][]" multiple></select>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="observaciones[6.4][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="observaciones[6.4][0]" rows="3"></textarea>
                                                         </td>
-                                                    </tr>
+                                                    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFilaPlan(this)" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td></tr>
                                                 </tbody>
                                             </table>
                                         </div>
                                         <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
-                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaPlan('6.4')">Agregar fila</button>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaPlan('6.4')">Quitar fila</button>
+                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaSeccionPlan('6.4')">Agregar fila</button>
                                         </div>
                                     </div>
                                 </div>
@@ -293,6 +295,7 @@
                                                         <th rowspan="2">Responsable</th>
                                                         <th rowspan="2">Participantes</th>
                                                         <th rowspan="2">Observaciones sobre el cumplimiento</th>
+                                                        <th rowspan="2"></th>
                                                     </tr>
                                                     <tr>
                                                         <th class="text-center">E</th>
@@ -315,7 +318,7 @@
                                                             <input type="text" class="form-control form-control-sm" name="num_actividad[7.2][0]" value="7.2.1" readonly>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="actividad[7.2][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="actividad[7.2][0]" rows="3"></textarea>
                                                         </td>
                                                         <td class="text-center"><input type="checkbox" name="meses[7.2][0][]" value="1"></td>
                                                         <td class="text-center"><input type="checkbox" name="meses[7.2][0][]" value="2"></td>
@@ -338,15 +341,14 @@
                                                             <select class="form-select form-select-sm participantes-select" name="participantes[7.2][0][]" multiple></select>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="observaciones[7.2][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="observaciones[7.2][0]" rows="3"></textarea>
                                                         </td>
-                                                    </tr>
+                                                    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFilaPlan(this)" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td></tr>
                                                 </tbody>
                                             </table>
                                         </div>
                                         <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
-                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaPlan('7.2')">Agregar fila</button>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaPlan('7.2')">Quitar fila</button>
+                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaSeccionPlan('7.2')">Agregar fila</button>
                                         </div>
                                     </div>
                                 </div>
@@ -371,6 +373,7 @@
                                                         <th rowspan="2">Responsable</th>
                                                         <th rowspan="2">Participantes</th>
                                                         <th rowspan="2">Observaciones sobre el cumplimiento</th>
+                                                        <th rowspan="2"></th>
                                                     </tr>
                                                     <tr>
                                                         <th class="text-center">E</th>
@@ -393,7 +396,7 @@
                                                             <input type="text" class="form-control form-control-sm" name="num_actividad[7.6][0]" value="7.6.1" readonly>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="actividad[7.6][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="actividad[7.6][0]" rows="3"></textarea>
                                                         </td>
                                                         <td class="text-center"><input type="checkbox" name="meses[7.6][0][]" value="1"></td>
                                                         <td class="text-center"><input type="checkbox" name="meses[7.6][0][]" value="2"></td>
@@ -416,15 +419,14 @@
                                                             <select class="form-select form-select-sm participantes-select" name="participantes[7.6][0][]" multiple></select>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="observaciones[7.6][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="observaciones[7.6][0]" rows="3"></textarea>
                                                         </td>
-                                                    </tr>
+                                                    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFilaPlan(this)" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td></tr>
                                                 </tbody>
                                             </table>
                                         </div>
                                         <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
-                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaPlan('7.6')">Agregar fila</button>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaPlan('7.6')">Quitar fila</button>
+                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaSeccionPlan('7.6')">Agregar fila</button>
                                         </div>
                                     </div>
                                 </div>
@@ -449,6 +451,7 @@
                                                         <th rowspan="2">Responsable</th>
                                                         <th rowspan="2">Participantes</th>
                                                         <th rowspan="2">Observaciones sobre el cumplimiento</th>
+                                                        <th rowspan="2"></th>
                                                     </tr>
                                                     <tr>
                                                         <th class="text-center">E</th>
@@ -471,7 +474,7 @@
                                                             <input type="text" class="form-control form-control-sm" name="num_actividad[7.7][0]" value="7.7.1" readonly>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="actividad[7.7][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="actividad[7.7][0]" rows="3"></textarea>
                                                         </td>
                                                         <td class="text-center"><input type="checkbox" name="meses[7.7][0][]" value="1"></td>
                                                         <td class="text-center"><input type="checkbox" name="meses[7.7][0][]" value="2"></td>
@@ -494,28 +497,27 @@
                                                             <select class="form-select form-select-sm participantes-select" name="participantes[7.7][0][]" multiple></select>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="observaciones[7.7][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="observaciones[7.7][0]" rows="3"></textarea>
                                                         </td>
-                                                    </tr>
+                                                    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFilaPlan(this)" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td></tr>
                                                 </tbody>
                                             </table>
                                         </div>
                                         <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
-                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaPlan('7.7')">Agregar fila</button>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaPlan('7.7')">Quitar fila</button>
+                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaSeccionPlan('7.7')">Agregar fila</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- SECCIÓN 7.11 Control de los datos y gestión de la información -->
+                            <!-- SECCIÓN 8.3 Control de Documentos del Sistema de Gestión -->
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
-                                    <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse7-11" aria-expanded="false" aria-controls="collapse7-11">
-                                        <span class="fw-bold text-white">7.11 Control de los datos y gestión de la información</span>
+                                    <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse8-3" aria-expanded="false" aria-controls="collapse8-3">
+                                        <span class="fw-bold text-white">8.3 Control de Documentos del Sistema de Gestión</span>
                                     </button>
                                 </h2>
-                                <div id="collapse7-11" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
+                                <div id="collapse8-3" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
                                     <div class="accordion-body p-0">
                                         <div class="table-responsive border-bottom border-dark mb-3">
                                             <table class="table table-bordered align-middle mb-0">
@@ -527,6 +529,7 @@
                                                         <th rowspan="2">Responsable</th>
                                                         <th rowspan="2">Participantes</th>
                                                         <th rowspan="2">Observaciones sobre el cumplimiento</th>
+                                                        <th rowspan="2"></th>
                                                     </tr>
                                                     <tr>
                                                         <th class="text-center">E</th>
@@ -543,54 +546,53 @@
                                                         <th class="text-center">D</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody id="plan-rows-7.11">
-                                                    <tr class="plan-row" data-row="0" data-seccion="7.11">
+                                                <tbody id="plan-rows-8.3">
+                                                    <tr class="plan-row" data-row="0" data-seccion="8.3">
                                                         <td class="text-center">
-                                                            <input type="text" class="form-control form-control-sm" name="num_actividad[7.11][0]" value="7.11.1" readonly>
+                                                            <input type="text" class="form-control form-control-sm" name="num_actividad[8.3][0]" value="8.3.1" readonly>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="actividad[7.11][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="actividad[8.3][0]" rows="3"></textarea>
                                                         </td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="1"></td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="2"></td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="3"></td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="4"></td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="5"></td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="6"></td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="7"></td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="8"></td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="9"></td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="10"></td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="11"></td>
-                                                        <td class="text-center"><input type="checkbox" name="meses[7.11][0][]" value="12"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="1"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="2"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="3"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="4"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="5"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="6"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="7"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="8"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="9"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="10"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="11"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.3][0][]" value="12"></td>
                                                         <td>
-                                                            <select class="form-select form-select-sm responsable-select" name="responsable[7.11][0]">
+                                                            <select class="form-select form-select-sm responsable-select" name="responsable[8.3][0]">
                                                                 <option value="">Selecciona...</option>
                                                             </select>
                                                         </td>
                                                         <td>
-                                                            <select class="form-select form-select-sm participantes-select" name="participantes[7.11][0][]" multiple></select>
+                                                            <select class="form-select form-select-sm participantes-select" name="participantes[8.3][0][]" multiple></select>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="observaciones[7.11][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="observaciones[8.3][0]" rows="3"></textarea>
                                                         </td>
-                                                    </tr>
+                                                    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFilaPlan(this)" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td></tr>
                                                 </tbody>
                                             </table>
                                         </div>
                                         <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
-                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaPlan('7.11')">Agregar fila</button>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaPlan('7.11')">Quitar fila</button>
+                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaSeccionPlan('8.3')">Agregar fila</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- SECCIÓN 8.8 Auditorías internas Opción A -->
+                            <!-- SECCIÓN 8.8 Auditorías Internas y Externas -->
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
                                     <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse8-8" aria-expanded="false" aria-controls="collapse8-8">
-                                        <span class="fw-bold text-white">8.8 Auditorías internas Opción A</span>
+                                        <span class="fw-bold text-white">8.8 Auditorías Internas y Externas</span>
                                     </button>
                                 </h2>
                                 <div id="collapse8-8" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
@@ -605,6 +607,7 @@
                                                         <th rowspan="2">Responsable</th>
                                                         <th rowspan="2">Participantes</th>
                                                         <th rowspan="2">Observaciones sobre el cumplimiento</th>
+                                                        <th rowspan="2"></th>
                                                     </tr>
                                                     <tr>
                                                         <th class="text-center">E</th>
@@ -627,7 +630,7 @@
                                                             <input type="text" class="form-control form-control-sm" name="num_actividad[8.8][0]" value="8.8.1" readonly>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="actividad[8.8][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="actividad[8.8][0]" rows="3"></textarea>
                                                         </td>
                                                         <td class="text-center"><input type="checkbox" name="meses[8.8][0][]" value="1"></td>
                                                         <td class="text-center"><input type="checkbox" name="meses[8.8][0][]" value="2"></td>
@@ -650,15 +653,92 @@
                                                             <select class="form-select form-select-sm participantes-select" name="participantes[8.8][0][]" multiple></select>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="observaciones[8.8][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="observaciones[8.8][0]" rows="3"></textarea>
                                                         </td>
-                                                    </tr>
+                                                    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFilaPlan(this)" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td></tr>
                                                 </tbody>
                                             </table>
                                         </div>
                                         <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
-                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaPlan('8.8')">Agregar fila</button>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaPlan('8.8')">Quitar fila</button>
+                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaSeccionPlan('8.8')">Agregar fila</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 8.9 Revisión por la dirección -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button bg-primary collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse8-9" aria-expanded="false" aria-controls="collapse8-9">
+                                        <span class="fw-bold text-white">8.9 Revisión por la dirección</span>
+                                    </button>
+                                </h2>
+                                <div id="collapse8-9" class="accordion-collapse collapse" data-bs-parent="#accordionPlan">
+                                    <div class="accordion-body p-0">
+                                        <div class="table-responsive border-bottom border-dark mb-3">
+                                            <table class="table table-bordered align-middle mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="text-center" rowspan="2">No</th>
+                                                        <th rowspan="2">Actividades</th>
+                                                        <th colspan="12">Meses</th>
+                                                        <th rowspan="2">Responsable</th>
+                                                        <th rowspan="2">Participantes</th>
+                                                        <th rowspan="2">Observaciones sobre el cumplimiento</th>
+                                                        <th rowspan="2"></th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="text-center">E</th>
+                                                        <th class="text-center">F</th>
+                                                        <th class="text-center">M</th>
+                                                        <th class="text-center">A</th>
+                                                        <th class="text-center">M</th>
+                                                        <th class="text-center">J</th>
+                                                        <th class="text-center">J</th>
+                                                        <th class="text-center">A</th>
+                                                        <th class="text-center">S</th>
+                                                        <th class="text-center">O</th>
+                                                        <th class="text-center">N</th>
+                                                        <th class="text-center">D</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="plan-rows-8.9">
+                                                    <tr class="plan-row" data-row="0" data-seccion="8.9">
+                                                        <td class="text-center">
+                                                            <input type="text" class="form-control form-control-sm" name="num_actividad[8.9][0]" value="8.9" readonly>
+                                                        </td>
+                                                        <td>
+                                                            <textarea class="form-control form-control-sm" name="actividad[8.9][0]" rows="3"></textarea>
+                                                        </td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="1"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="2"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="3"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="4"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="5"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="6"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="7"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="8"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="9"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="10"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="11"></td>
+                                                        <td class="text-center"><input type="checkbox" name="meses[8.9][0][]" value="12"></td>
+                                                        <td>
+                                                            <select class="form-select form-select-sm responsable-select" name="responsable[8.9][0]">
+                                                                <option value="">Selecciona...</option>
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <select class="form-select form-select-sm participantes-select" name="participantes[8.9][0][]" multiple></select>
+                                                        </td>
+                                                        <td>
+                                                            <textarea class="form-control form-control-sm" name="observaciones[8.9][0]" rows="3"></textarea>
+                                                        </td>
+                                                    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFilaPlan(this)" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
+                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaSeccionPlan('8.9')">Agregar fila</button>
                                         </div>
                                     </div>
                                 </div>
@@ -683,6 +763,7 @@
                                                         <th rowspan="2">Responsable</th>
                                                         <th rowspan="2">Participantes</th>
                                                         <th rowspan="2">Observaciones sobre el cumplimiento</th>
+                                                        <th rowspan="2"></th>
                                                     </tr>
                                                     <tr>
                                                         <th class="text-center">E</th>
@@ -705,7 +786,7 @@
                                                             <input type="text" class="form-control form-control-sm" name="num_actividad[iv][0]" value="IV.1" readonly>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="actividad[iv][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="actividad[iv][0]" rows="3"></textarea>
                                                         </td>
                                                         <td class="text-center"><input type="checkbox" name="meses[iv][0][]" value="1"></td>
                                                         <td class="text-center"><input type="checkbox" name="meses[iv][0][]" value="2"></td>
@@ -728,15 +809,14 @@
                                                             <select class="form-select form-select-sm participantes-select" name="participantes[iv][0][]" multiple></select>
                                                         </td>
                                                         <td>
-                                                            <textarea class="form-control form-control-sm" name="observaciones[iv][0]" rows="3" onkeyup="convertirTexto(this)"></textarea>
+                                                            <textarea class="form-control form-control-sm" name="observaciones[iv][0]" rows="3"></textarea>
                                                         </td>
-                                                    </tr>
+                                                    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarFilaPlan(this)" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td></tr>
                                                 </tbody>
                                             </table>
                                         </div>
                                         <div class="d-flex justify-content-end gap-2 mb-3 p-3 pt-0">
-                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaPlan('iv')">Agregar fila</button>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="quitarFilaPlan('iv')">Quitar fila</button>
+                                            <button type="button" class="btn btn-outline-success btn-sm" onclick="agregarFilaSeccionPlan('iv')">Agregar fila</button>
                                         </div>
                                     </div>
                                 </div>
@@ -799,12 +879,11 @@
     </a>
 
     <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
-    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
     <script src="js/sb-admin-2.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js" defer="defer"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/actividades_sgc.js?v=20260306"></script>
+    <script src="js/actividades_sgc.js?v=20260317_2"></script>
 </body>
 </html>

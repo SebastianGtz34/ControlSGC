@@ -135,7 +135,7 @@ if ($accion === 'guardar_estatus_actividad') {
         exit;
     }
 
-    if ($estatusActividad !== 'APROBADO' && $estatusActividad !== 'NO APROBADO') {
+    if ($estatusActividad !== 'CUMPLIO' && $estatusActividad !== 'NO CUMPLIO') {
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => 'Estatus de actividad invalido.']);
         exit;
@@ -156,7 +156,7 @@ if ($accion === 'guardar_estatus_actividad') {
     $observacionAprobado = null;
     $observacionNoAprobado = null;
 
-    if ($estatusActividad === 'APROBADO') {
+    if ($estatusActividad === 'CUMPLIO') {
         $observacionAprobado = $observacion;
     } else {
         $observacionNoAprobado = $observacion;
@@ -218,7 +218,8 @@ if ($accion === 'guardar_estatus_actividad') {
     header('Content-Type: application/json');
     echo json_encode([
         'success' => true,
-        'message' => 'Estatus de actividad actualizado correctamente.'
+        'message' => 'Estatus de actividad actualizado correctamente.',
+        'estatus_actividad' => $estatusActividad
     ]);
     exit;
 }
@@ -272,6 +273,7 @@ if ($accion === 'detalle_plan') {
             a.num_actividad,
             a.actividad,
             a.estatus_actividad,
+            a.realizado,
             a.observaciones,
             a.periodo_registro,
             (
@@ -291,7 +293,15 @@ if ($accion === 'detalle_plan') {
                 FROM involucrados i
                 LEFT JOIN mess_rrhh.usuarios u ON u.id_usuario = i.id_usuario
                 WHERE i.id_actividad = a.id AND i.tipo_involucrado = 'Participante'
-            ) AS participantes
+            ) AS participantes,
+            (
+                SELECT u.noEmpleado
+                FROM involucrados i
+                LEFT JOIN mess_rrhh.usuarios u ON u.id_usuario = i.id_usuario
+                WHERE i.id_actividad = a.id AND i.tipo_involucrado = 'Responsable'
+                LIMIT 1
+            ) AS id_responsable
+
         FROM actividades a
         WHERE a.id_plan_anual = ?
         ORDER BY 
@@ -378,6 +388,91 @@ if ($accion === 'detalle_plan') {
             'actividades_por_seccion' => $actividadesPorSeccion
         ]
     ]);
+    exit;
+}
+
+if ($accion === 'guardar_realizado') {
+    $idActividad = isset($_POST['id_actividad']) ? (int)$_POST['id_actividad'] : 0;
+    $realizado = isset($_POST['realizado']) ? strtoupper(trim((string)$_POST['realizado'])) : '';
+    $observacion = isset($_POST['observacion']) ? trim((string)$_POST['observacion']) : '';
+
+    if ($idActividad <= 0) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'ID de actividad invalido.']);
+        exit;
+    }
+
+    if ($realizado !== 'CUMPLIO' && $realizado !== 'NO CUMPLIO') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Valor invalido.']);
+        exit;
+    }
+
+    if ($observacion === '') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'La observacion es obligatoria.']);
+        exit;
+    }
+
+    $observacionAprobado = null;
+    $observacionNoAprobado = null;
+
+    if ($realizado === 'CUMPLIO') {
+        $observacionAprobado = $observacion;
+    } else {
+        $observacionNoAprobado = $observacion;
+    }
+
+    $stmt = $conn->prepare("UPDATE actividades SET estatus_actividad = ?, observaciones_aprobado = ?, observaciones_no_aprobado = ? WHERE id = ? LIMIT 1");
+    if (!$stmt) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'No se pudo preparar la actualizacion.']);
+        exit;
+    }
+
+    $stmt->bind_param('sssi', $realizado, $observacionAprobado, $observacionNoAprobado, $idActividad);
+    $ok = $stmt->execute();
+    $stmt->close();
+
+    if (!$ok) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'No se pudo actualizar la actividad.']);
+        exit;
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true, 'realizado' => $realizado]);
+    exit;
+}
+
+if ($accion === 'guardar_estatus_cumplio') {
+    $idActividad = isset($_POST['id_actividad']) ? (int)$_POST['id_actividad'] : 0;
+
+    if ($idActividad <= 0) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'ID de actividad invalido.']);
+        exit;
+    }
+
+    $stmt = $conn->prepare("UPDATE actividades SET realizado = 'REALIZADO' WHERE id = ? LIMIT 1");
+    if (!$stmt) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'No se pudo preparar la actualizacion.']);
+        exit;
+    }
+
+    $stmt->bind_param('i', $idActividad);
+    $ok = $stmt->execute();
+    $stmt->close();
+
+    if (!$ok) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'No se pudo actualizar el realizado de la actividad.']);
+        exit;
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true, 'realizado' => 'REALIZADO']);
     exit;
 }
 
