@@ -19,7 +19,7 @@
         <?php include 'menu.php'; ?>
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
-                <?php //include 'encabezado.php'; ?>
+                <?php include 'encabezado.php'; ?>
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-xl-12">
